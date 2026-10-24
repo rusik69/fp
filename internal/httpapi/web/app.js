@@ -900,6 +900,32 @@ const aipAeroRoutes = new Map([
   ["GB", "uk"], ["US", "us"], ["UZ", "uz/en"], ["WF", "wf/en"]
 ]);
 
+const regionalNotamSources = new Map([
+  ["CA", { name: "NAV CANADA CFPS", url: "https://plan.navcanada.ca/", note: "Official Canadian flight-planning service. Open it directly for route or geographic NOTAM lookup; FP does not retrieve or cache its data." }],
+  ["MX", { name: "SENEAM NOTAM", url: "https://apps.seneam.gob.mx/notam/", note: "Official Mexican NOTAM portal. FP does not retrieve or cache its data." }],
+  ["BR", { name: "AISWEB Brazil", url: "https://aisweb.decea.mil.br/?i=notam", note: "Official DECEA AIS portal with NOTAM listings. Verify the current briefing and validity on AISWEB." }],
+  ["AR", { name: "ANAC Argentina NOTAM", url: "https://ais.anac.gob.ar/", note: "Official AIS reference summaries are not a PIB. Do not use this page as an operational briefing." }],
+  ["CL", { name: "DGAC Chile IFIS", url: "https://aipchile.dgac.gob.cl/", note: "Official Chilean aeronautical information portal. Verify current NOTAM and briefing coverage directly." }],
+  ["ZA", { name: "ATNS File2Fly", url: "https://file2fly.atns.co.za/", note: "Official service; free account registration and validation required. FP does not automate access or cache NOTAMs." }],
+  ["QA", { name: "Qatar AIS NOTAM", url: "https://www.aim.gov.qa/", note: "Official Qatar AIM portal publishes NOTAM information. Check issue and validity dates on the source document." }],
+  ["JP", { name: "Japan SWIM S2019", url: "https://top.swim.mlit.go.jp/swim/", note: "Japan's current SWIM service replaced the former AIS Japan NOTAM search. Account/service activation may be required." }],
+  ["IN", { name: "AAI Online Flight Planning", url: "https://onlinefpl.aai.aero/ofpl/", note: "Official AAI flight-planning/PIB portal. AIM India public summaries cover selected airports only." }],
+  ["AU", { name: "Airservices Australia NAIPS", url: "https://www.airservicesaustralia.com/naips/", note: "Free account required. Automated extraction and redistribution require written authorization; FP only links to NAIPS." }],
+  ["NZ", { name: "Airways New Zealand IFIS", url: "https://www.ifis.airways.co.nz/", note: "Official New Zealand FIR briefing service. Use its current official briefing; FP does not retrieve or cache NOTAMs." }],
+  ["GB", { name: "NATS Aeronautical Information", url: "https://www.nats.aero/ais/", note: "Official UK AIS source. PIB access requires registration." }]
+]);
+
+function setRegionalNotamSource(country) {
+  const source = regionalNotamSources.get(country);
+  const panel = document.querySelector("#regional-notam-source");
+  const link = document.querySelector("#regional-notam-link");
+  panel.hidden = !source;
+  if (!source) return;
+  link.href = source.url;
+  link.textContent = `Open ${source.name} ↗`;
+  document.querySelector("#regional-notam-note").textContent = source.note;
+}
+
 function setAIPAirportLink(country, icao) {
   const link = document.querySelector("#aip-airport-link");
   const route = aipAeroRoutes.get(country);
@@ -919,6 +945,7 @@ function configureRegion(country, station, icao) {
   document.querySelector("#notam-panel").hidden = !hasFAACoverage;
   document.querySelector("#regional-resources").hidden = hasFAACoverage;
   setAIPAirportLink(country, icao);
+  setRegionalNotamSource(country);
   if (hasFAACoverage) {
     setNotamLink(icao || station);
   } else {
