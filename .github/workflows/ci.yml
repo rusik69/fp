@@ -87,7 +87,7 @@ jobs:
         run: |
           mkdir -p dist
           GOOS=android GOARCH=arm64 CGO_ENABLED=0 go build -o dist/fp-android-arm64 ./cmd/fp
-          make build-android-apk
+          ANDROID_NDK_HOME="$ANDROID_SDK_ROOT/ndk/30.0.16248370" make build-android-apk
       - name: Run Android instrumentation test
         uses: reactivecircus/android-emulator-runner@v2.38.0
         with:

@@ -12,4 +12,5 @@ export ANDROID_HOME="$sdk_root"
 export ANDROID_SDK_ROOT="$sdk_root"
 export ANDROID_NDK_HOME="$ndk_root"
 export PATH="$(go env GOPATH)/bin:$PATH"
+go tool gomobile init
 go tool gomobile bind -target=android -androidapi=26 -javapkg=com.fp.mobile -o "$output" ./mobile
