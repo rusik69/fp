@@ -17,7 +17,7 @@ From the repository root:
 make build-ios
 ```
 
-This generates `ios/build/Mobile.xcframework` for iOS devices and simulators, then builds the simulator app with code signing disabled. The app bundle is `ios/build/DerivedData/Build/Products/Debug-iphonesimulator/FlightPicture.app`. It is a simulator build, not a signed App Store distribution.
+This generates `ios/build/Mobile.xcframework` for iOS devices and simulators, then builds both the Simulator app and an unsigned iOS device app. The bundles are `ios/build/DerivedData/Build/Products/Debug-iphonesimulator/FlightPicture.app` and `ios/build/DerivedData/Build/Products/Debug-iphoneos/FlightPicture.app`. These are development builds, not signed App Store distributions.
 
 To install and launch in a booted simulator:
 

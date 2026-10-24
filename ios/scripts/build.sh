@@ -23,3 +23,11 @@ xcodebuild \
   -derivedDataPath "$DERIVED_DATA" \
   CODE_SIGNING_ALLOWED=NO \
   build
+xcodebuild \
+  -project "$IOS_DIR/FlightPicture.xcodeproj" \
+  -scheme FlightPicture \
+  -configuration Debug \
+  -destination 'generic/platform=iOS' \
+  -derivedDataPath "$DERIVED_DATA" \
+  CODE_SIGNING_ALLOWED=NO \
+  build

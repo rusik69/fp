@@ -106,7 +106,7 @@ jobs:
           retention-days: 7
 
   build-ios:
-    name: Build iOS app and simulator smoke test
+    name: Build iOS device and Simulator apps; simulator smoke test
     runs-on: macos-15
     timeout-minutes: 30
     steps:
@@ -127,7 +127,9 @@ jobs:
           xcrun simctl launch "iPhone 16" com.fp.flightpicture
       - uses: actions/upload-artifact@v7.0.2
         with:
-          name: fp-ios-simulator-app
-          path: ios/build/DerivedData/Build/Products/Debug-iphonesimulator/FlightPicture.app
+          name: fp-ios
+          path: |
+            ios/build/DerivedData/Build/Products/Debug-iphonesimulator/FlightPicture.app
+            ios/build/DerivedData/Build/Products/Debug-iphoneos/FlightPicture.app
           if-no-files-found: error
           retention-days: 7
