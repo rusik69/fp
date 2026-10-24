@@ -912,6 +912,13 @@ const regionalNotamSources = new Map([
   ["IN", { name: "AAI Online Flight Planning", url: "https://onlinefpl.aai.aero/ofpl/", note: "Official AAI flight-planning/PIB portal. AIM India public summaries cover selected airports only." }],
   ["AU", { name: "Airservices Australia NAIPS", url: "https://www.airservicesaustralia.com/naips/", note: "Free account required. Automated extraction and redistribution require written authorization; FP only links to NAIPS." }],
   ["NZ", { name: "Airways New Zealand IFIS", url: "https://www.ifis.airways.co.nz/", note: "Official New Zealand FIR briefing service. Use its current official briefing; FP does not retrieve or cache NOTAMs." }],
+  ["ES", { name: "ENAIRE Spain NOTAM / ICARO", url: "https://aip.enaire.es/AIP/NOTAM-en.html", note: "Official ENAIRE AIP page links to ICARO PIB and NOTAM consultation. Direct ICARO access may be restricted; confirm a current operational PIB." }],
+  ["FR", { name: "French SIA SOFIA-Briefing", url: "https://sofia-briefing.aviation-civile.gouv.fr/sofia/pages/notamform.html", note: "Official SIA NOTAM consultation and briefing service. Account access may be required." }],
+  ["SG", { name: "CAAS Singapore NOTAM List", url: "https://aim-sg.caas.gov.sg/notam-list/", note: "Official monthly valid-NOTAM list, not a route PIB. Check its publication month and obtain a current flight briefing." }],
+  ["AE", { name: "UAE GCAA NOTAM Information", url: "https://www.gcaa.gov.ae/en/ais/Pages/notam.aspx", note: "Official GCAA NOTAM information page; JavaScript and an account profile may be required to view documents." }],
+  ["SA", { name: "Saudi SANS PIB", url: "https://aimss.sans.com.sa/en/pib", note: "Official SANS AIS publishes PIB, NOTAM checklists, and valid NOTAM lists. Verify the current briefing and validity." }],
+  ["GH", { name: "Ghana GCAA NOTAM List", url: "https://www.gcaa.com.gh/notam/", note: "Official current A- and B-series lists. Check the UTC issue time and validity; use the applicable current PIB for route planning." }],
+  ["EC", { name: "Ecuador DGAC IFIS NOTAM", url: "https://www.ais.aviacioncivil.gob.ec/notam", note: "Official DGAC information system; sign-in may be required. Its notice states that only digital AIP texts are authentic." }],
   ["GB", { name: "NATS Aeronautical Information", url: "https://www.nats.aero/ais/", note: "Official UK AIS source. PIB access requires registration." }]
 ]);
 
