@@ -131,6 +131,21 @@
       
       <p class="disclaimer">Informational use only. Verify current official weather, charts, NOTAMs, and briefing sources before flight. Cached reports may be stale.</p>
     </section>
+    <section class="documents personal-briefing" id="personal-briefing-archive">
+      <div class="documents-heading"><div><p class="eyebrow">THIS DEVICE</p><h3>Save NOTAM/PIB text for offline use</h3></div></div>
+      <p class="document-status">Copy text from an official briefing and save it locally. FP does not fetch, verify, or refresh this copy. Save only material you are permitted to keep; verify the current official source before flight.</p>
+      <form id="personal-briefing-form" class="personal-briefing-form">
+        <label for="personal-briefing-source">Official source</label>
+        <input id="personal-briefing-source" type="text" maxlength="160" required placeholder="Example: State AIS portal">
+        <label for="personal-briefing-issued">Issue/effective time as shown by the source</label>
+        <input id="personal-briefing-issued" type="text" maxlength="120" required placeholder="Example: 2026-10-24 1200 UTC">
+        <label for="personal-briefing-text">NOTAM/PIB text</label>
+        <textarea id="personal-briefing-text" rows="8" maxlength="100000" required spellcheck="false" placeholder="Paste the briefing text here"></textarea>
+        <button id="save-personal-briefing" type="submit">Save local copy</button>
+      </form>
+      <p id="personal-briefing-status" class="document-status" role="status" aria-live="polite"></p>
+      <ul id="personal-briefing-list" class="personal-briefing-list"></ul>
+    </section>
     <section class="empty-state" id="empty-state"><div class="empty-icon" aria-hidden="true">◎</div><h2>Your briefing, ready when you are.</h2><p>Look up a field while connected. FP keeps its last briefing on this device for spotty or unavailable service.</p></section>
   </main>
   <footer>Weather source: <a href="https://www.aviationweather.gov/" rel="noreferrer">AviationWeather.gov</a>. Data currency is shown with each briefing.</footer>

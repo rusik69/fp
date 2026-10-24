@@ -827,6 +827,7 @@ function showSavedVFR() {
   }
 }
 const offlineChartCacheName = "fp-documents-v1";
+const personalBriefingDBName = "fp-personal-briefings";
 
 async function refreshOfflineChartLibrary() {
   const panel = document.querySelector("#offline-chart-library");
@@ -883,6 +884,103 @@ async function refreshOfflineChartLibrary() {
   }
 }
 
+function openPersonalBriefingDB() {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) {
+      reject(new Error("This browser does not support local briefing storage."));
+      return;
+    }
+    const request = indexedDB.open(personalBriefingDBName, 1);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains("briefings")) {
+        request.result.createObjectStore("briefings", { keyPath: "id" });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error("Could not open local briefing storage."));
+  });
+}
+
+async function withPersonalBriefingStore(mode, operation) {
+  const db = await openPersonalBriefingDB();
+  try {
+    return await new Promise((resolve, reject) => {
+      const transaction = db.transaction("briefings", mode);
+      let result;
+      const request = operation(transaction.objectStore("briefings"));
+      request.onsuccess = () => { result = request.result; };
+      request.onerror = () => reject(request.error || transaction.error);
+      transaction.oncomplete = () => resolve(result);
+      transaction.onerror = () => reject(transaction.error || new Error("Local briefing transaction failed."));
+      transaction.onabort = () => reject(transaction.error || new Error("Local briefing transaction was cancelled."));
+    });
+  } finally {
+    db.close();
+  }
+}
+
+async function refreshPersonalBriefings() {
+  const list = document.querySelector("#personal-briefing-list");
+  const status = document.querySelector("#personal-briefing-status");
+  try {
+    const briefings = await withPersonalBriefingStore("readonly", (store) => store.getAll());
+    briefings.sort((a, b) => b.savedAt.localeCompare(a.savedAt));
+    list.replaceChildren();
+    for (const briefing of briefings) {
+      const item = document.createElement("li");
+      const details = document.createElement("details");
+      const summary = document.createElement("summary");
+      summary.textContent = `${briefing.source} · ${briefing.issueTime}`;
+      const saved = document.createElement("p");
+      saved.className = "personal-briefing-meta";
+      saved.textContent = `Saved on this device ${formatReportTime(briefing.savedAt)} · not automatically refreshed`;
+      const text = document.createElement("pre");
+      text.className = "personal-briefing-text";
+      text.textContent = briefing.text;
+      details.append(summary, saved, text);
+      const remove = document.createElement("button");
+      remove.className = "secondary-button";
+      remove.type = "button";
+      remove.textContent = "Remove";
+      remove.setAttribute("aria-label", `Remove saved briefing from ${briefing.source}`);
+      remove.addEventListener("click", async () => {
+        remove.disabled = true;
+        try {
+          await withPersonalBriefingStore("readwrite", (store) => store.delete(briefing.id));
+          await refreshPersonalBriefings();
+          status.textContent = "Removed the local briefing copy.";
+        } catch {
+          status.textContent = "Could not remove the local briefing copy.";
+          remove.disabled = false;
+        }
+      });
+      item.append(details, remove);
+      list.append(item);
+    }
+    status.textContent = briefings.length
+      ? `${briefings.length} personal briefing copy/copies stored only in this browser. Storage may be evicted; verify the current official source before flight.`
+      : "No local briefing copies saved. Copies are stored only in this browser and are not verified or refreshed by FP.";
+  } catch (error) {
+    list.replaceChildren();
+    status.textContent = error.message || "Local briefing storage is unavailable in this browser.";
+  }
+}
+
+async function savePersonalBriefing(source, issueTime, text) {
+  const id = window.crypto?.randomUUID
+    ? window.crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const briefing = {
+    id,
+    source,
+    issueTime,
+    text,
+    savedAt: new Date().toISOString()
+  };
+  await withPersonalBriefingStore("readwrite", (store) => store.put(briefing));
+  return briefing;
+}
+
 
 const aipAeroRoutes = new Map([
   ["AL", "al/en"], ["AM", "am/en"], ["AU", "au"], ["AT", "at/en"], ["AZ", "az/en"],
@@ -935,6 +1033,8 @@ function setRegionalNotamSource(country) {
   const source = regionalNotamSources.get(country);
   const panel = document.querySelector("#regional-notam-source");
   const link = document.querySelector("#regional-notam-link");
+  document.querySelector("#personal-briefing-source").placeholder =
+    source ? source.name : country === "US" ? "FAA NOTAM Search" : "State AIS/AIM portal";
   panel.hidden = !source;
   if (!source) return;
   link.href = source.url;
@@ -1208,6 +1308,32 @@ airportDirectoryButton.addEventListener("click", async () => {
   }
 });
 
+const personalBriefingForm = document.querySelector("#personal-briefing-form");
+personalBriefingForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const source = document.querySelector("#personal-briefing-source").value.trim();
+  const issueTime = document.querySelector("#personal-briefing-issued").value.trim();
+  const text = document.querySelector("#personal-briefing-text").value;
+  const saveButton = document.querySelector("#save-personal-briefing");
+  const status = document.querySelector("#personal-briefing-status");
+  if (!source || !issueTime || !text.trim()) {
+    status.textContent = "Enter the source, its stated issue/effective time, and briefing text.";
+    return;
+  }
+  saveButton.disabled = true;
+  status.textContent = "Saving a local copy…";
+  try {
+    await savePersonalBriefing(source, issueTime, text);
+    personalBriefingForm.reset();
+    await refreshPersonalBriefings();
+    status.textContent = "Saved on this device. This copy is not verified or automatically refreshed; check the current official source before flight.";
+  } catch (error) {
+    status.textContent = error.message || "Could not save this briefing in browser storage.";
+  } finally {
+    saveButton.disabled = false;
+  }
+});
+void refreshPersonalBriefings();
 document.querySelector("#load-vfr").addEventListener("click", loadVFRCharts);
 document.querySelector("#refresh-offline-charts").addEventListener("click", refreshOfflineChartLibrary);
 document.addEventListener("visibilitychange", () => {
