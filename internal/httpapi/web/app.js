@@ -923,6 +923,11 @@ const regionalNotamSources = new Map([
   ["ID", { name: "AirNav Indonesia AIS Center", url: "https://pia.airnavindonesia.co.id/", note: "Official national AIS advertises real-time NOTAM distribution; account sign-up is available on the portal." }],
   ["IR", { name: "Iran AIS Valid NOTAM List", url: "https://ais.airport.ir/85", note: "Official AIS list of valid A- and B-series NOTAMs with a last-updated time. Check freshness and the source documents before use." }],
   ["SR", { name: "Suriname AIS Valid NOTAMs", url: "https://cadsur.sr/ais/index.php/category/notices-to-airmen/list-of-valid-notam/", note: "Official AIS publication page with dated NOTAM posts; it is not a route-specific PIB. Verify current notices and complete coverage." }],
+  ["DE", { name: "DFS Germany AIS Portal", url: "https://ais.dfs.de/pilotservice/home.jsp?lang=en", note: "Official route-related NOTAM briefings are free after AIS-Portal registration. Check the issue time and briefing scope." }],
+  ["FI", { name: "Fintraffic Finland PIBs", url: "https://www.ais.fi/ais/bulletins/", note: "Official Finnish NOF publishes FIR and aerodrome pre-flight bulletins. Check bulletin scope and issue time." }],
+  ["IT", { name: "ENAV Italy Pre-Flight Service", url: "https://www.enav.it/en/what-we-do/we-create-solutions-for-international-markets/aeronautical-information/pre-flight", note: "Official ENAV describes customer self-briefing and PIB retrieval including NOTAM. Confirm access and briefing validity with ENAV." }],
+  ["NL", { name: "LVNL Netherlands Homebriefing", url: "https://hbs.ixosystem.eu/ixo/login.php", note: "Official LVNL Homebriefing supports flight preparation with AIP, NOTAM, and weather. Account access may be required." }],
+  ["NO", { name: "Avinor Norway IPPC", url: "https://www.ippc.no/ippc/index.jsp", note: "Official briefing reports include NOTAM updated to report-production time. AIP Norway is copyrighted; follow Avinor's terms." }],
   ["GB", { name: "NATS Aeronautical Information", url: "https://www.nats.aero/ais/", note: "Official UK AIS source. PIB access requires registration." }]
 ]);
 
