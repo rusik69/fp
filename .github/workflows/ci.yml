@@ -91,7 +91,7 @@ jobs:
       - name: Run Android instrumentation test
         uses: reactivecircus/android-emulator-runner@v2.38.0
         with:
-          api-level: 37.0
+          api-level: 36
           arch: x86_64
           target: google_apis
           profile: pixel_2
