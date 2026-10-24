@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10252a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="FP Weather">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
+  <title>FP — Pilot weather</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="FP home"><span class="mark">FP</span><span>Flight picture</span></a>
+    <span class="offline-indicator" id="connection">Checking connection…</span>
+  </header>
+  <main>
+    <section class="intro">
+      <p class="eyebrow">PILOT WEATHER BRIEF</p>
+      <h1>Know your field.</h1>
+      <p class="lede">Worldwide airport information, METARs, TAFs, and SIGMETs. Cached briefings and hazard reports remain available offline; charts and NOTAM coverage varies by region.</p>
+      <form id="lookup-form" autocomplete="off">
+        <label for="station">Airport identifier</label>
+        <div class="search-row">
+          <input id="station" name="station" type="search" placeholder="ICAO, IATA, or airport name" autocapitalize="characters" spellcheck="false" required aria-describedby="airport-search-hint">
+          <button id="lookup" type="submit">Get briefing <span aria-hidden="true">→</span></button>
+        </div>
+        <p id="airport-search-hint" class="hint">Enter an ICAO/IATA identifier for a live briefing, or type an airport name to search your saved worldwide directory. Airport-directory results are reference data, not live operational information.</p>
+        <ul id="airport-search-results" class="airport-search-results" hidden aria-label="Saved airport matches" aria-live="polite"></ul>
+      </form>
+      <div class="catalog-download">
+        <button id="save-airport-directory" class="secondary-button" type="button">Save airport directory on this server for offline use</button>
+        <p id="airport-directory-status" class="hint" role="status">Optional global airport, runway, frequency, and navaid reference from OurAirports (public domain; no accuracy guarantee). Saved records work offline on this device; live weather and operational data still require service.</p>
+      </div>
+    </section>
+    <div id="message" class="message" role="status" aria-live="polite"></div>
+    <section id="briefing" class="briefing" hidden aria-live="polite">
+      <div class="briefing-heading">
+        <div><p class="eyebrow" id="source">AVIATIONWEATHER.GOV</p><h2 id="airport-title"></h2></div>
+        <span class="freshness" id="freshness"></span>
+      </div>
+      <div id="airport-details" class="airport-details"></div>
+      <p id="airport-data-note" class="document-status" hidden></p>
+      <section id="airport-operations" class="airport-operations" hidden>
+        <div id="runway-group"><h3>Runways</h3><p class="airport-info-note">Dimensions, true headings, lighting, and closure flags as reported by the source.</p><ul id="runway-list" class="airport-info-list"></ul></div>
+        <div id="frequency-group"><h3>Radio frequencies</h3><ul id="frequency-list" class="airport-info-list"></ul></div>
+        <div id="navaid-group" hidden><h3>Nearby navigation aids</h3><p class="airport-info-note">Reference-only radio aids within 250 NM.</p><ul id="navaid-list" class="airport-info-list"></ul></div>
+      </section>
+      <div class="reports">
+        <article class="report-card">
+          <div class="card-heading"><h3>METAR</h3><span id="metar-time"></span></div>
+          <pre id="metar"></pre>
+          <div id="metar-details" class="weather-details"></div>
+          <p class="airport-info-note">Decoded from AviationWeather.gov: cloud bases are AGL; ceiling is the lowest broken, overcast, or vertical-visibility layer. Altimeter is shown in inHg and hPa. Verify the raw METAR and current official briefing.</p>
+        </article>
+        <article class="report-card">
+          <div class="card-heading"><h3>TAF</h3><span id="taf-time"></span></div>
+          <pre id="taf"></pre>
+          <ol id="taf-periods" class="taf-period-list" hidden aria-label="Decoded TAF forecast periods"></ol>
+          <p id="taf-period-status" class="airport-info-note" role="status"></p>
+          <p class="airport-info-note">Periods and probability/change-group labels are decoded from AviationWeather.gov and displayed in UTC. They summarize the TAF; retain the raw report and confirm the current official forecast.</p>
+        </article>
+      </div>
+      <section id="sigmet-panel" class="documents" hidden>
+        <div class="documents-heading"><div><p class="eyebrow">WORLDWIDE WEATHER HAZARDS</p><h3>Active SIGMETs</h3></div><span id="sigmet-updated" class="document-meta"></span></div>
+        <p id="sigmet-status" class="document-status" role="status"></p>
+        <div class="sigmet-map-shell" id="sigmet-map-shell">
+          <svg id="sigmet-map" viewBox="0 0 760 540" role="img" aria-label="Schematic active SIGMET positions around the selected airport"></svg>
+          <p class="sigmet-map-key">Red: convective, tropical, or volcanic ash · Yellow: turbulence, icing, or mountain wave · Teal: other hazards · Blue: FAA class airspace · Gold: FAA current TFR locations · Gray dots: nearby airports · Gold triangles: nearby radio navigation aids</p>
+          <p id="sigmet-map-status" class="airport-info-note"></p>
+          <section class="tfr-nearby" aria-labelledby="tfr-nearby-title">
+            <h4 id="tfr-nearby-title">FAA TFR locations shown</h4>
+            <ul id="tfr-list" class="tfr-list" aria-label="FAA TFR location details"></ul>
+          </section>
+          <p class="sigmet-map-note">Schematic 500 NM range map, not a navigation chart. TFRs come from the FAA current location layer (U.S.-focused); polygons may be incomplete and title dates are not parsed into active/expired status. This supplemental display is not an official briefing or navigation source; verify current NOTAMs and restrictions directly with FAA before flight. FAA class airspace is U.S., Puerto Rico, and U.S. Virgin Islands only and reference-only—not for navigation or clearances. Airport and radio-aid points are reference data; SIGMET feed may not include every local advisory.</p>
+        </div>
+        <label class="visually-hidden" for="sigmet-filter">Filter SIGMETs by FIR, hazard, or text</label>
+        <input id="sigmet-filter" class="vfr-filter" type="search" placeholder="Filter FIR, hazard, or message" disabled>
+        <ul id="sigmet-list" class="sigmet-list"></ul>
+      </section>
+      <section id="pirep-section" class="pireps" hidden>
+        <div class="documents-heading"><div><p class="eyebrow">PILOT REPORTS</p><h3>Nearby PIREPs</h3></div><span class="document-meta">AviationWeather.gov coverage is primarily U.S. &amp; North Atlantic · 100 NM · 6 hours</span></div>
+        <p id="pirep-status" class="document-status"></p>
+        <ul id="pirep-list" class="pirep-list"></ul>
+      </section>
+      <section class="documents" id="procedure-panel">
+        <div class="documents-heading">
+          <div><p class="eyebrow">FAA TERMINAL PROCEDURES</p><h3>Approach plates &amp; airport diagrams</h3></div>
+          <span id="procedure-cycle" class="document-meta">Load an airport to find its current cycle.</span>
+        </div>
+        <p id="procedure-status" class="document-status" role="status"></p>
+        <ul id="procedure-list" class="procedure-list"></ul>
+      </section>
+      <section class="documents" id="vfr-panel">
+        <div class="documents-heading">
+          <div><p class="eyebrow">FAA VFR CHARTS</p><h3>Sectionals &amp; terminal-area charts</h3></div>
+          <button id="load-vfr" class="secondary-button" type="button">Load chart catalog</button>
+        </div>
+        <p id="vfr-status" class="document-status" role="status">The FAA publishes chart editions every 56 days. Load the catalog to select charts to save.</p>
+        <label class="visually-hidden" for="vfr-filter">Filter VFR charts</label>
+        <input id="vfr-filter" class="vfr-filter" type="search" placeholder="Filter chart names" disabled>
+        <ul id="vfr-list" class="procedure-list"></ul>
+      </section>
+      <section class="documents" id="offline-chart-library" hidden>
+        <div class="documents-heading">
+          <div><p class="eyebrow">THIS DEVICE</p><h3>Saved chart PDFs</h3></div>
+          <button id="refresh-offline-charts" class="secondary-button" type="button">Refresh list</button>
+        </div>
+        <p id="offline-chart-status" class="document-status" role="status">Saved PDFs are available offline when browser storage retains them. Verify each chart’s currency before use.</p>
+        <ul id="offline-chart-list" class="procedure-list"></ul>
+      </section>
+      <section class="notam-card" id="notam-panel">
+        <div><p class="eyebrow">UNITED STATES</p><h3>FAA NOTAM Search</h3><p>Search the FAA NOTAM system directly. FP does not cache NOTAMs.</p></div>
+        <a id="notam-link" class="notam-link" href="https://notams.aim.faa.gov/notamSearch" target="_blank" rel="noreferrer">Open FAA NOTAM Search ↗</a>
+      </section>
+      <section class="notam-card" id="regional-resources" hidden>
+        <div><p class="eyebrow">INTERNATIONAL COVERAGE</p><h3>Local charts &amp; NOTAMs</h3><p>FP does not integrate State chart products or operational international NOTAM feeds; external resources are not cached by FP. AIP:Aero indexes official chart links for 64 countries and supports direct airport pages for listed countries; some airports may be absent, so use the general index if a direct page is missing. Coverage varies, so verify each chart against the current State AIP. OpenFlightMaps publishes community-maintained VFR map data for selected regions only; it is not a worldwide service or a certified navigation source. EUROCONTROL’s AIS Online directory links State AIS/AIM providers worldwide, but its entries may be incomplete or inaccurate. ICAO says its global NOTAM repository is collected every 12 hours; treat it as reference only, not current operational briefing data. Use the destination State’s AIS/AIP for current NOTAMs. EUROCONTROL EAD Basic is not connected to operational data.</p></div>
+        <div class="regional-links">
+          <a class="notam-link" href="https://aip.aero/" target="_blank" rel="noreferrer">Browse free AIP charts ↗</a>
+          <a id="aip-airport-link" class="notam-link" href="https://aip.aero/" target="_blank" rel="noreferrer" hidden></a>
+          <a class="notam-link" href="https://openflightmaps.org/downloads/" target="_blank" rel="noreferrer">Browse OpenFlightMaps regional VFR maps ↗</a>
+          <a class="notam-link" href="https://www.eurocontrol.int/articles/ais-online" target="_blank" rel="noreferrer">Find State AIS/AIP worldwide ↗</a>
+          <a class="notam-link" href="https://www.icao.int/notams-0" target="_blank" rel="noreferrer">Search ICAO NOTAM reference ↗</a>
+          <a class="notam-link" href="https://www.ead.eurocontrol.int/" target="_blank" rel="noreferrer">Open EAD Basic (non-operational demo) ↗</a>
+        </div>
+      </section>
+      
+      <p class="disclaimer">Informational use only. Verify current official weather, charts, NOTAMs, and briefing sources before flight. Cached reports may be stale.</p>
+    </section>
+    <section class="empty-state" id="empty-state"><div class="empty-icon" aria-hidden="true">◎</div><h2>Your briefing, ready when you are.</h2><p>Look up a field while connected. FP keeps its last briefing on this device for spotty or unavailable service.</p></section>
+  </main>
+  <footer>Weather source: <a href="https://www.aviationweather.gov/" rel="noreferrer">AviationWeather.gov</a>. Data currency is shown with each briefing.</footer>
+  <script src="/app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+{
+  "name": "FP Pilot Weather",
+  "short_name": "FP Weather",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#101a1c",
+  "theme_color": "#10252a",
+  "description": "Offline-capable airport weather briefing",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

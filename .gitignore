@@ -1,0 +1,28 @@
+# Go
+/bin/
+/dist/
+*.test
+*.out
+coverage.out
+
+# Frontend dependencies/build output
+/node_modules/
+/frontend/dist/
+
+# Local data and secrets
+/data/
+.env
+.env.*
+!.env.example
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/
+
+# Android Gradle and generated gomobile outputs
+/android/build/
+/android/.gradle/
+/android/.tools/
+/android/local.properties
+/android/app/build/
