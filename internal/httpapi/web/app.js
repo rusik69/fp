@@ -201,6 +201,7 @@ function renderPIREPs(reports) {
 let sigmetIndex = null;
 const sigmetStorageKey = "fp-sigmet-index";
 let selectedAirport = null;
+let currentFavoriteStation = "";
 let airspaceData = null;
 let airspaceState = "unavailable";
 let tfrData = null;
@@ -650,6 +651,8 @@ function show(bundle, local = false) {
   const name = firstText(airport, ["name", "airportName", "siteName"]);
   const station = bundle.station || stationInput.value.toUpperCase();
   document.querySelector("#airport-title").textContent = name ? `${station} · ${name}` : station;
+  currentFavoriteStation = String(station).toUpperCase();
+  updateFavoriteAirportButton();
   document.querySelector("#source").textContent = bundle.source || "SAVED ON THIS DEVICE";
   const referenceOnly = bundle.source?.startsWith("OurAirports");
   const airportDataNote = document.querySelector("#airport-data-note");
@@ -704,6 +707,95 @@ function show(bundle, local = false) {
   return hasFAACoverage;
 }
 
+const favoriteAirportsKey = "fp-favorite-airports-v1";
+
+function getFavoriteAirports() {
+  try {
+    const favorites = JSON.parse(localStorage.getItem(favoriteAirportsKey) || "[]");
+    if (!Array.isArray(favorites)) return [];
+    return favorites.filter((favorite) =>
+      favorite &&
+      typeof favorite.station === "string" &&
+      /^[A-Z0-9]{3,4}$/.test(favorite.station) &&
+      (favorite.name === undefined || typeof favorite.name === "string")
+    );
+  } catch {
+    return [];
+  }
+}
+
+function updateFavoriteAirportButton() {
+  const button = document.querySelector("#favorite-airport");
+  const validStation = /^[A-Z0-9]{3,4}$/.test(currentFavoriteStation);
+  const isFavorite = validStation && getFavoriteAirports().some((favorite) => favorite.station === currentFavoriteStation);
+  button.disabled = !validStation;
+  button.textContent = isFavorite ? "Remove favorite" : "Save airport";
+  button.setAttribute("aria-pressed", String(isFavorite));
+}
+
+function refreshFavoriteAirports() {
+  const list = document.querySelector("#saved-airports-list");
+  const status = document.querySelector("#saved-airports-status");
+  const favorites = getFavoriteAirports();
+  list.replaceChildren();
+  for (const favorite of favorites) {
+    const item = document.createElement("li");
+    const open = document.createElement("button");
+    open.type = "button";
+    open.className = "saved-airport-open";
+    open.textContent = favorite.name ? `${favorite.station} · ${favorite.name}` : favorite.station;
+    open.addEventListener("click", () => {
+      stationInput.value = favorite.station;
+      lookup(favorite.station);
+    });
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "secondary-button";
+    remove.textContent = "Remove";
+    remove.setAttribute("aria-label", `Remove ${favorite.station} from saved airports`);
+    remove.addEventListener("click", () => {
+      try {
+        const remaining = getFavoriteAirports().filter((entry) => entry.station !== favorite.station);
+        localStorage.setItem(favoriteAirportsKey, JSON.stringify(remaining));
+        refreshFavoriteAirports();
+        status.textContent = `${favorite.station} removed from saved airports.`;
+      } catch {
+        status.textContent = "Could not update saved airports in this browser.";
+      }
+    });
+    item.append(open, remove);
+    list.append(item);
+  }
+  status.textContent = favorites.length
+    ? `${favorites.length} airport shortcut${favorites.length === 1 ? "" : "s"} saved on this device. Selecting one tries live data, then this device's saved briefing or airport reference.`
+    : "No favorites saved. Save an airport from its briefing to add an offline shortcut.";
+  updateFavoriteAirportButton();
+}
+
+document.querySelector("#favorite-airport").addEventListener("click", () => {
+  const status = document.querySelector("#saved-airports-status");
+  try {
+    const favorites = getFavoriteAirports();
+    const existing = favorites.findIndex((favorite) => favorite.station === currentFavoriteStation);
+    const added = existing < 0;
+    if (added) {
+      favorites.unshift({
+        station: currentFavoriteStation,
+        name: firstText(selectedAirport || {}, ["name", "airportName", "siteName"])
+      });
+    } else {
+      favorites.splice(existing, 1);
+    }
+    localStorage.setItem(favoriteAirportsKey, JSON.stringify(favorites));
+    refreshFavoriteAirports();
+    document.querySelector("#saved-airports-panel").open = added;
+    status.textContent = added
+      ? `${currentFavoriteStation} saved as an airport shortcut on this device.`
+      : `${currentFavoriteStation} removed from saved airports.`;
+  } catch {
+    status.textContent = "Could not update saved airports in this browser.";
+  }
+});
 const procedurePrefix = "fp-procedures:";
 
 function renderProcedures(index, local = false) {
@@ -1347,6 +1439,7 @@ document.querySelector("#sigmet-filter").addEventListener("input", () => {
 });
 window.addEventListener("online", setConnection);
 window.addEventListener("offline", setConnection);
+refreshFavoriteAirports();
 setConnection();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
 const initialStation = new URLSearchParams(location.search).get("station");

@@ -31,6 +31,11 @@
         <p id="airport-search-hint" class="hint">Enter an ICAO/IATA identifier for a live briefing, or type an airport name to search your saved worldwide directory. Airport-directory results are reference data, not live operational information.</p>
         <ul id="airport-search-results" class="airport-search-results" hidden aria-label="Saved airport matches" aria-live="polite"></ul>
       </form>
+      <details class="saved-airports" id="saved-airports-panel">
+        <summary>Saved airports</summary>
+        <p id="saved-airports-status" class="hint" role="status">No favorites saved. Save an airport from its briefing to add an offline shortcut.</p>
+        <ul id="saved-airports-list" class="saved-airports-list"></ul>
+      </details>
       <div class="catalog-download">
         <button id="save-airport-directory" class="secondary-button" type="button">Save airport directory on this server for offline use</button>
         <p id="airport-directory-status" class="hint" role="status">Optional global airport, runway, frequency, and navaid reference from OurAirports (public domain; no accuracy guarantee). Saved records work offline on this device; live weather and operational data still require service.</p>
@@ -40,6 +45,7 @@
     <section id="briefing" class="briefing" hidden aria-live="polite">
       <div class="briefing-heading">
         <div><p class="eyebrow" id="source">AVIATIONWEATHER.GOV</p><h2 id="airport-title"></h2></div>
+        <button id="favorite-airport" class="secondary-button" type="button" aria-pressed="false" disabled>Save airport</button>
         <span class="freshness" id="freshness"></span>
       </div>
       <div id="airport-details" class="airport-details"></div>
