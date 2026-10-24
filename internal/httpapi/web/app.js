@@ -919,6 +919,10 @@ const regionalNotamSources = new Map([
   ["SA", { name: "Saudi SANS PIB", url: "https://aimss.sans.com.sa/en/pib", note: "Official SANS AIS publishes PIB, NOTAM checklists, and valid NOTAM lists. Verify the current briefing and validity." }],
   ["GH", { name: "Ghana GCAA NOTAM List", url: "https://www.gcaa.com.gh/notam/", note: "Official current A- and B-series lists. Check the UTC issue time and validity; use the applicable current PIB for route planning." }],
   ["EC", { name: "Ecuador DGAC IFIS NOTAM", url: "https://www.ais.aviacioncivil.gob.ec/notam", note: "Official DGAC information system; sign-in may be required. Its notice states that only digital AIP texts are authentic." }],
+  ["MY", { name: "CAAM Malaysia eAIP / NOTAM", url: "https://aip.caam.gov.my/aip/eAIP/history-en-MS.html", note: "Official current eAIP portal includes NOTAM summaries and valid-NOTAM checklists, not a route-specific PIB. Check the effective issue and notice validity." }],
+  ["ID", { name: "AirNav Indonesia AIS Center", url: "https://pia.airnavindonesia.co.id/", note: "Official national AIS advertises real-time NOTAM distribution; account sign-up is available on the portal." }],
+  ["IR", { name: "Iran AIS Valid NOTAM List", url: "https://ais.airport.ir/85", note: "Official AIS list of valid A- and B-series NOTAMs with a last-updated time. Check freshness and the source documents before use." }],
+  ["SR", { name: "Suriname AIS Valid NOTAMs", url: "https://cadsur.sr/ais/index.php/category/notices-to-airmen/list-of-valid-notam/", note: "Official AIS publication page with dated NOTAM posts; it is not a route-specific PIB. Verify current notices and complete coverage." }],
   ["GB", { name: "NATS Aeronautical Information", url: "https://www.nats.aero/ais/", note: "Official UK AIS source. PIB access requires registration." }]
 ]);
 
