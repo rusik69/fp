@@ -1,0 +1,25 @@
+name: FlightPicture
+options:
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+targets:
+  FlightPicture:
+    type: application
+    platform: iOS
+    sources:
+      - path: FlightPicture/AppDelegate.swift
+    dependencies:
+      - framework: build/Mobile.xcframework
+        embed: false
+    settings:
+      base:
+        CODE_SIGNING_ALLOWED: NO
+        CURRENT_PROJECT_VERSION: 1
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: FlightPicture/Info.plist
+        IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+        MARKETING_VERSION: "1.0"
+        PRODUCT_BUNDLE_IDENTIFIER: com.fp.flightpicture
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1,2"

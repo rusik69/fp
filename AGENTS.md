@@ -19,9 +19,10 @@
 - Keep provider integrations and HTTP handlers small, testable packages.
 - Use context cancellation and bounded timeouts for network operations.
 - Add behavior-focused tests for API contracts, stale/cache behavior, and provider parsing.
-- Run `make check` before submitting changes. Run `make build-all` for desktop cross-builds; run `make build-android-apk` and `make android-test` for Android when the SDK/emulator is available.
+- Run `make check` before submitting changes. Run `make build-all` for desktop cross-builds, `make build-android-apk` and `make android-test` for Android, and `make build-ios` for iOS when their toolchains are available.
 - Never commit credentials, downloaded aviation datasets, generated binaries, or local environment files.
 
 ## Platform builds
 - Desktop Go builds target macOS, Linux, and Windows on amd64 and arm64 where supported by Go.
-- Android APK packaging uses the checked-in Gradle wrapper, Go Mobile bridge, and Android SDK; see `android/README.md`. iOS app packaging is not yet available.
+- Android APK packaging uses the checked-in Gradle wrapper, Go Mobile bridge, and Android SDK; see `android/README.md`.
+- iOS app packaging uses the Go Mobile framework and Xcode project; see `ios/README.md`.

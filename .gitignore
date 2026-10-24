@@ -26,3 +26,6 @@ coverage.out
 /android/.tools/
 /android/local.properties
 /android/app/build/
+
+# Generated iOS framework and Xcode output
+/ios/build/

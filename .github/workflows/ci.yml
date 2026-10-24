@@ -105,22 +105,29 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  build-ios-backend:
-    name: Build iOS Go backend
+  build-ios:
+    name: Build iOS app and simulator smoke test
     runs-on: macos-15
-    env:
-      CGO_ENABLED: "1"
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: true
-      - run: xcodebuild -version
-      - run: mkdir -p dist && GOOS=ios GOARCH=arm64 go build -o dist/httpapi-ios-arm64.a ./internal/httpapi
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Build iOS simulator app
+        run: make build-ios
+      - name: Launch app in iPhone simulator
+        run: |
+          xcrun simctl boot "iPhone 16"
+          xcrun simctl bootstatus "iPhone 16" -b
+          xcrun simctl install "iPhone 16" ios/build/DerivedData/Build/Products/Debug-iphonesimulator/FlightPicture.app
+          xcrun simctl launch "iPhone 16" com.fp.flightpicture
       - uses: actions/upload-artifact@v7.0.2
         with:
-          name: fp-ios-backend
-          path: dist/httpapi-ios-arm64.a
+          name: fp-ios-simulator-app
+          path: ios/build/DerivedData/Build/Products/Debug-iphonesimulator/FlightPicture.app
           if-no-files-found: error
           retention-days: 7

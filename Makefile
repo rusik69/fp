@@ -46,11 +46,10 @@ android-test:
 	ANDROID_HOME="$(ANDROID_HOME)" ANDROID_SDK_ROOT="$(ANDROID_SDK_ROOT)" ANDROID_NDK_HOME="$(ANDROID_NDK_HOME)" PATH="$(HOME)/go/bin:$(PATH)" ./android/gradlew --project-dir android --no-daemon connectedDebugAndroidTest
 
 build-ios:
-	mkdir -p $(BIN_DIR)
-	GOOS=ios GOARCH=arm64 CGO_ENABLED=1 $(GO) build -o $(BIN_DIR)/httpapi-ios-arm64.a ./internal/httpapi
+	./ios/scripts/build.sh
 
 check: test build-all build-android
 
 
 clean:
-	rm -rf $(BIN_DIR)
+	rm -rf $(BIN_DIR) ios/build
