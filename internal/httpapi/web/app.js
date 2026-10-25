@@ -1432,6 +1432,7 @@ personalBriefingForm.addEventListener("submit", async (event) => {
   }
 });
 void refreshPersonalBriefings();
+void refreshOfflineChartLibrary();
 document.querySelector("#load-vfr").addEventListener("click", loadVFRCharts);
 document.querySelector("#refresh-offline-charts").addEventListener("click", refreshOfflineChartLibrary);
 document.addEventListener("visibilitychange", () => {

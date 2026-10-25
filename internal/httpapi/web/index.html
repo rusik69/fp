@@ -110,14 +110,6 @@
         <input id="vfr-filter" class="vfr-filter" type="search" placeholder="Filter chart names" disabled>
         <ul id="vfr-list" class="procedure-list"></ul>
       </section>
-      <section class="documents" id="offline-chart-library" hidden>
-        <div class="documents-heading">
-          <div><p class="eyebrow">THIS DEVICE</p><h3>Saved chart PDFs</h3></div>
-          <button id="refresh-offline-charts" class="secondary-button" type="button">Refresh list</button>
-        </div>
-        <p id="offline-chart-status" class="document-status" role="status">Saved PDFs are available offline when browser storage retains them. Verify each chart’s currency before use.</p>
-        <ul id="offline-chart-list" class="procedure-list"></ul>
-      </section>
       <section class="notam-card" id="notam-panel">
         <div><p class="eyebrow">UNITED STATES</p><h3>FAA NOTAM Search</h3><p>Search the FAA NOTAM system directly. FP does not cache NOTAMs.</p></div>
         <a id="notam-link" class="notam-link" href="https://notams.aim.faa.gov/notamSearch" target="_blank" rel="noreferrer">Open FAA NOTAM Search ↗</a>
@@ -136,6 +128,14 @@
       </section>
       
       <p class="disclaimer">Informational use only. Verify current official weather, charts, NOTAMs, and briefing sources before flight. Cached reports may be stale.</p>
+    </section>
+    <section class="documents" id="offline-chart-library" hidden>
+      <div class="documents-heading">
+        <div><p class="eyebrow">THIS DEVICE</p><h3>Saved chart PDFs</h3></div>
+        <button id="refresh-offline-charts" class="secondary-button" type="button">Refresh list</button>
+      </div>
+      <p id="offline-chart-status" class="document-status" role="status">Saved PDFs are available offline when browser storage retains them. Verify each chart’s currency before use.</p>
+      <ul id="offline-chart-list" class="procedure-list"></ul>
     </section>
     <section class="documents personal-briefing" id="personal-briefing-archive">
       <div class="documents-heading"><div><p class="eyebrow">THIS DEVICE</p><h3>Save NOTAM/PIB text for offline use</h3></div></div>
