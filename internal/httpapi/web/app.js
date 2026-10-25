@@ -201,6 +201,8 @@ function renderPIREPs(reports) {
 }
 
 let sigmetIndex = null;
+let sigmetMapRangeNM = 500;
+let sigmetIsLocal = false;
 const sigmetStorageKey = "fp-sigmet-index";
 let selectedAirport = null;
 let currentFavoriteStation = "";
@@ -284,7 +286,7 @@ function airspacePolygonRings(feature) {
   return [];
 }
 
-function drawTFRs(appendSVG, airport, center, scale) {
+function drawTFRs(appendSVG, airport, center, scale, radiusNM) {
   let polygonCount = 0;
   const nearby = new Map();
   for (const feature of tfrData?.features || []) {
@@ -296,7 +298,7 @@ function drawTFRs(appendSVG, airport, center, scale) {
       if (!Array.isArray(ring) || ring.length < 3) continue;
       const points = ring.map((coordinate) => Array.isArray(coordinate) && coordinate.length >= 2
         ? projectSIGMETCoordinate({ lon: coordinate[0], lat: coordinate[1] }, airport) : null);
-      if (!polygonWithinRange(points, 500)) continue;
+      if (!polygonWithinRange(points, radiusNM)) continue;
       const d = points.map((point, index) => `${index ? "L" : "M"} ${(center.x + point.x * scale).toFixed(2)} ${(center.y - point.y * scale).toFixed(2)}`).join(" ") + " Z";
       const shape = appendSVG("path", { d, class: "tfr-shape" });
       const properties = feature.properties || {};
@@ -338,7 +340,7 @@ function drawTFRs(appendSVG, airport, center, scale) {
   return { polygonCount, featureCount: records.length };
 }
 
-function drawAirspace(appendSVG, airport, center, scale) {
+function drawAirspace(appendSVG, airport, center, scale, radiusNM) {
   let count = 0;
   if (!airspaceData || airspaceData.type !== "FeatureCollection" || !Array.isArray(airspaceData.features)) return count;
   for (const feature of airspaceData.features) {
@@ -349,7 +351,7 @@ function drawAirspace(appendSVG, airport, center, scale) {
         const points = ring.map((coordinate) => Array.isArray(coordinate) && coordinate.length >= 2
           ? projectSIGMETCoordinate({ lon: coordinate[0], lat: coordinate[1] }, airport) : null);
         if (points.some((point) => !point)) continue;
-        if (points.every((point) => point.x * point.x + point.y * point.y > 250 * 250)) continue;
+        if (!polygonWithinRange(points, radiusNM)) continue;
         const d = points.map((point, index) => `${index ? "L" : "M"} ${(center.x + point.x * scale).toFixed(2)} ${(center.y - point.y * scale).toFixed(2)}`).join(" ") + " Z";
         const shape = appendSVG("path", { d, class: "airspace-shape" });
         const properties = feature.properties || {};
@@ -427,7 +429,8 @@ function drawSIGMETMap(reports) {
   map.replaceChildren();
   const namespace = "http://www.w3.org/2000/svg";
   const center = { x: 380, y: 270 };
-  const scale = 0.38;
+  const scale = 190 / sigmetMapRangeNM;
+  const nearbyReferenceRadiusNM = Math.min(sigmetMapRangeNM, 250);
   const appendSVG = (name, attributes, parent = map) => {
     const element = document.createElementNS(namespace, name);
     for (const [key, value] of Object.entries(attributes)) element.setAttribute(key, String(value));
@@ -435,16 +438,16 @@ function drawSIGMETMap(reports) {
     return element;
   };
 
-  for (const radius of [100, 250, 500]) {
+  for (const radius of [sigmetMapRangeNM / 5, sigmetMapRangeNM / 2, sigmetMapRangeNM]) {
     appendSVG("circle", { cx: center.x, cy: center.y, r: radius * scale, class: "sigmet-range-ring" });
     const label = appendSVG("text", { x: center.x + 5, y: center.y - radius * scale + 13, class: "sigmet-range-label" });
     label.textContent = `${radius} NM`;
   }
-  const tfrResult = drawTFRs(appendSVG, selectedAirport, center, scale);
-  const airspaceCount = drawAirspace(appendSVG, selectedAirport, center, scale);
+  const tfrResult = drawTFRs(appendSVG, selectedAirport, center, scale, sigmetMapRangeNM);
+  const airspaceCount = drawAirspace(appendSVG, selectedAirport, center, scale, nearbyReferenceRadiusNM);
   let nearbyCount = 0;
   for (const report of reports) {
-    if (!sigmetWithinRange(report, selectedAirport)) continue;
+    if (!sigmetWithinRange(report, selectedAirport, sigmetMapRangeNM)) continue;
     const points = report.coords.map((coordinate) => projectSIGMETCoordinate(coordinate, selectedAirport));
     const isArea = report.geom === "AREA" && points.length >= 3;
     const path = points.map((point, index) => `${index === 0 ? "M" : "L"} ${(center.x + point.x * scale).toFixed(2)} ${(center.y - point.y * scale).toFixed(2)}`).join(" ");
@@ -461,7 +464,7 @@ function drawSIGMETMap(reports) {
   const airportRecords = airportDirectoryCache?.airports;
   if (airportRecords) {
     const selectedCode = firstText(selectedAirport, ["ident", "icaoId"]).toUpperCase();
-    const nearbyRadiusSquared = 250 * 250;
+    const nearbyRadiusSquared = nearbyReferenceRadiusNM * nearbyReferenceRadiusNM;
     for (const ident in airportRecords) {
       if (!Object.prototype.hasOwnProperty.call(airportRecords, ident)) continue;
       const airport = airportRecords[ident];
@@ -483,7 +486,7 @@ function drawSIGMETMap(reports) {
   let nearbyNavaidCount = 0;
   for (const navaid of airportDirectoryCache?.navaids || []) {
     const point = projectSIGMETCoordinate(navaid, selectedAirport);
-    if (!point || point.x * point.x + point.y * point.y > 250 * 250) continue;
+    if (!point || point.x * point.x + point.y * point.y > nearbyReferenceRadiusNM * nearbyReferenceRadiusNM) continue;
     const x = center.x + point.x * scale;
     const y = center.y - point.y * scale;
     const marker = appendSVG("path", {
@@ -497,20 +500,21 @@ function drawSIGMETMap(reports) {
   appendSVG("circle", { cx: center.x, cy: center.y, r: 6, class: "sigmet-airport-marker" });
   const airportTitle = appendSVG("title", {}, map.lastElementChild);
   airportTitle.textContent = `${firstText(selectedAirport, ["icaoId", "name"]) || "Selected airport"} · map center`;
-  map.setAttribute("aria-label", `Schematic map centered on ${firstText(selectedAirport, ["icaoId", "ident", "name"]) || "selected airport"}, with ${tfrResult.polygonCount} FAA TFR polygons, ${nearbyCount} active SIGMET areas, ${airspaceCount} FAA airspace outlines, ${nearbyAirportCount} reference airports and ${nearbyNavaidCount} navigation aids`);
+  map.setAttribute("aria-label", `Schematic ${sigmetMapRangeNM} NM map centered on ${firstText(selectedAirport, ["icaoId", "ident", "name"]) || "selected airport"}, with ${tfrResult.polygonCount} FAA TFR polygons, ${nearbyCount} active SIGMET areas, ${airspaceCount} FAA airspace outlines, ${nearbyAirportCount} reference airports and ${nearbyNavaidCount} navigation aids`);
   const fetchedAt = airspaceData?.properties?.fetchedAt;
   const airspaceNote = airspaceData
-    ? ` ${airspaceCount} FAA airspace polygon rings shown; ${airspaceState === "cached" ? "offline cached copy" : airspaceState === "stale" ? "stale provider data" : "provider response"}${fetchedAt ? ` fetched ${formatReportTime(fetchedAt)}` : ""}. FAA coverage: U.S., Puerto Rico, and U.S. Virgin Islands only. Reference only—not for navigation or clearances.`
+    ? ` ${airspaceCount} FAA airspace polygon rings shown within ${nearbyReferenceRadiusNM} NM; ${airspaceState === "cached" ? "offline cached copy" : airspaceState === "stale" ? "stale provider data" : "provider response"}${fetchedAt ? ` fetched ${formatReportTime(fetchedAt)}` : ""}. FAA coverage: U.S., Puerto Rico, and U.S. Virgin Islands only. Reference only—not for navigation or clearances.`
     : ` FAA airspace ${airspaceState === "loading" ? "loading" : "unavailable"}; no overlay shown. FAA coverage is limited to the U.S., Puerto Rico, and U.S. Virgin Islands. Reference only—not for navigation or clearances.`;
   const tfrFetchedAt = tfrData?.properties?.fetchedAt;
-  const tfrStatus = tfrData ? ` ${tfrResult.featureCount} FAA TFR location(s) in the FAA current layer within 500 NM; ${tfrState}; fetched ${formatReportTime(tfrFetchedAt)}.` : " FAA TFR overlay unavailable; verify directly with FAA.";
-  status.textContent = `${nearbyCount} active SIGMET${nearbyCount === 1 ? "" : "s"} with mapped geometry within 500 NM. ${airportRecords ? `${nearbyAirportCount} OurAirports reference airports and ${nearbyNavaidCount} radio navigation aids within 250 NM.` : "Save the airport directory to add nearby airport and navigation-aid reference points."}${tfrStatus}${airspaceNote}`;
+  const tfrStatus = tfrData ? ` ${tfrResult.featureCount} FAA TFR location(s) in the FAA current layer within ${sigmetMapRangeNM} NM; ${tfrState}; fetched ${formatReportTime(tfrFetchedAt)}.` : " FAA TFR overlay unavailable; verify directly with FAA.";
+  status.textContent = `${nearbyCount} active SIGMET${nearbyCount === 1 ? "" : "s"} with mapped geometry within ${sigmetMapRangeNM} NM. ${airportRecords ? `${nearbyAirportCount} OurAirports reference airports and ${nearbyNavaidCount} radio navigation aids within ${nearbyReferenceRadiusNM} NM.` : "Save the airport directory to add nearby airport and navigation-aid reference points."}${tfrStatus}${airspaceNote}`;
   return nearbyCount;
 }
 
 
 function renderSIGMETs(index, local = false) {
   sigmetIndex = index;
+  sigmetIsLocal = local;
   const panel = document.querySelector("#sigmet-panel");
   const filter = document.querySelector("#sigmet-filter");
   const list = document.querySelector("#sigmet-list");
@@ -553,7 +557,7 @@ function renderSIGMETs(index, local = false) {
   const cacheStatus = local || index.stale ? "Cached · possibly stale. " : "";
   const status = document.querySelector("#sigmet-status");
   const mappedCount = drawSIGMETMap(active);
-  const mapSummary = mappedCount === null ? "Airport coordinates unavailable; map omitted." : `${mappedCount} mapped within 500 NM.`;
+  const mapSummary = mappedCount === null ? "Airport coordinates unavailable; map omitted." : `${mappedCount} mapped within ${sigmetMapRangeNM} NM.`;
   status.textContent = active.length
     ? `${cacheStatus}${active.length} currently valid worldwide SIGMET${active.length === 1 ? "" : "s"}${query ? ` · ${matches.length} match your filter` : ""}. ${mapSummary} Verify the latest official briefing.`
     : `${cacheStatus}No currently valid SIGMETs returned by the global feed. ${mapSummary} This does not replace local advisories or official preflight briefing.`;
@@ -1607,7 +1611,16 @@ document.querySelector("#vfr-filter").addEventListener("input", () => {
   if (vfrIndex) renderVFR(vfrIndex);
 });
 document.querySelector("#sigmet-filter").addEventListener("input", () => {
-  if (sigmetIndex) renderSIGMETs(sigmetIndex);
+  if (sigmetIndex) renderSIGMETs(sigmetIndex, sigmetIsLocal);
+});
+document.querySelector("#sigmet-map-range").addEventListener("change", (event) => {
+  const range = Number(event.currentTarget.value);
+  if (![100, 250, 500].includes(range)) {
+    event.currentTarget.value = String(sigmetMapRangeNM);
+    return;
+  }
+  sigmetMapRangeNM = range;
+  if (sigmetIndex) renderSIGMETs(sigmetIndex, sigmetIsLocal);
 });
 window.addEventListener("online", setConnection);
 window.addEventListener("offline", setConnection);

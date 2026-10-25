@@ -74,6 +74,14 @@
         <div class="documents-heading"><div><p class="eyebrow">WORLDWIDE WEATHER HAZARDS</p><h3>Active SIGMETs</h3></div><span id="sigmet-updated" class="document-meta"></span></div>
         <p id="sigmet-status" class="document-status" role="status"></p>
         <div class="sigmet-map-shell" id="sigmet-map-shell">
+          <div class="sigmet-map-controls">
+            <label for="sigmet-map-range">Map range</label>
+            <select id="sigmet-map-range">
+              <option value="100">100 NM</option>
+              <option value="250">250 NM</option>
+              <option value="500" selected>500 NM</option>
+            </select>
+          </div>
           <svg id="sigmet-map" viewBox="0 0 760 540" role="img" aria-label="Schematic active SIGMET positions around the selected airport"></svg>
           <p class="sigmet-map-key">Red: convective, tropical, or volcanic ash · Yellow: turbulence, icing, or mountain wave · Teal: other hazards · Blue: FAA class airspace · Gold: FAA current TFR locations · Gray dots: nearby airports · Gold triangles: nearby radio navigation aids</p>
           <p id="sigmet-map-status" class="airport-info-note"></p>
@@ -81,7 +89,7 @@
             <h4 id="tfr-nearby-title">FAA TFR locations shown</h4>
             <ul id="tfr-list" class="tfr-list" aria-label="FAA TFR location details"></ul>
           </section>
-          <p class="sigmet-map-note">Schematic 500 NM range map, not a navigation chart. TFRs come from the FAA current location layer (U.S.-focused); polygons may be incomplete and title dates are not parsed into active/expired status. This supplemental display is not an official briefing or navigation source; verify current NOTAMs and restrictions directly with FAA before flight. FAA class airspace is U.S., Puerto Rico, and U.S. Virgin Islands only and reference-only—not for navigation or clearances. Airport and radio-aid points are reference data; SIGMET feed may not include every local advisory.</p>
+          <p class="sigmet-map-note">Schematic map with a selectable 100, 250, or 500 NM range, not a navigation chart. TFRs come from the FAA current location layer (U.S.-focused); polygons may be incomplete and title dates are not parsed into active/expired status. This supplemental display is not an official briefing or navigation source; verify current NOTAMs and restrictions directly with FAA before flight. FAA class airspace is U.S., Puerto Rico, and U.S. Virgin Islands only and reference-only—not for navigation or clearances. Airport and radio-aid points are reference data; SIGMET feed may not include every local advisory.</p>
         </div>
         <label class="visually-hidden" for="sigmet-filter">Filter SIGMETs by FIR, hazard, or text</label>
         <input id="sigmet-filter" class="vfr-filter" type="search" placeholder="Filter FIR, hazard, or message" disabled>
