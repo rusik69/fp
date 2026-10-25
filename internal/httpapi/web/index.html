@@ -129,12 +129,24 @@
       
       <p class="disclaimer">Informational use only. Verify current official weather, charts, NOTAMs, and briefing sources before flight. Cached reports may be stale.</p>
     </section>
-    <section class="documents" id="offline-chart-library" hidden>
+    <section class="documents" id="offline-chart-library">
       <div class="documents-heading">
         <div><p class="eyebrow">THIS DEVICE</p><h3>Saved chart PDFs</h3></div>
         <button id="refresh-offline-charts" class="secondary-button" type="button">Refresh list</button>
       </div>
-      <p id="offline-chart-status" class="document-status" role="status">Saved PDFs are available offline when browser storage retains them. Verify each chart’s currency before use.</p>
+      <p id="offline-chart-status" class="document-status" role="status">Save official chart PDFs here for offline access. Browser storage may be evicted; verify chart currency before use.</p>
+      <form id="local-chart-form" class="personal-briefing-form">
+        <label for="local-chart-title">Chart name</label>
+        <input id="local-chart-title" type="text" maxlength="160" required placeholder="Example: EGLL ILS runway 27R">
+        <label for="local-chart-source">Official source</label>
+        <input id="local-chart-source" type="text" maxlength="160" required placeholder="Example: State AIS/AIP portal">
+        <label for="local-chart-edition">Edition or effective date</label>
+        <input id="local-chart-edition" type="text" maxlength="120" required placeholder="Use the edition/date shown by the source">
+        <label for="local-chart-file">PDF file (50 MiB maximum)</label>
+        <input id="local-chart-file" type="file" accept="application/pdf,.pdf" required>
+        <button id="save-local-chart" type="submit">Save PDF on this device</button>
+      </form>
+      <p id="local-chart-status" class="document-status" role="status" aria-live="polite">Imported files stay in this browser. FP does not fetch, validate, or refresh them; follow provider terms and verify current charts before flight.</p>
       <ul id="offline-chart-list" class="procedure-list"></ul>
     </section>
     <section class="documents personal-briefing" id="personal-briefing-archive">

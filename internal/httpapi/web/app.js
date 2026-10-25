@@ -2,6 +2,8 @@ const form = document.querySelector("#lookup-form");
 const stationInput = document.querySelector("#station");
 const airportDirectoryButton = document.querySelector("#save-airport-directory");
 const airportDirectoryStatus = document.querySelector("#airport-directory-status");
+const localChartDBName = "fp-local-chart-pdfs";
+const localChartObjectURLs = new Map();
 const airportDirectoryDBName = "fp-offline-airports";
 const airportSearchResults = document.querySelector("#airport-search-results");
 
@@ -921,59 +923,116 @@ function showSavedVFR() {
 const offlineChartCacheName = "fp-documents-v1";
 const personalBriefingDBName = "fp-personal-briefings";
 
+function openLocalChartDB() {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) {
+      reject(new Error("This browser does not support local chart storage."));
+      return;
+    }
+    const request = indexedDB.open(localChartDBName, 1);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains("charts")) {
+        request.result.createObjectStore("charts", { keyPath: "id" });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error("Could not open local chart storage."));
+  });
+}
+
+async function withLocalChartStore(mode, operation) {
+  const db = await openLocalChartDB();
+  try {
+    return await new Promise((resolve, reject) => {
+      const transaction = db.transaction("charts", mode);
+      const request = operation(transaction.objectStore("charts"));
+      let result;
+      request.onsuccess = () => { result = request.result; };
+      request.onerror = () => reject(request.error || transaction.error);
+      transaction.oncomplete = () => resolve(result);
+      transaction.onerror = () => reject(transaction.error || new Error("Local chart transaction failed."));
+      transaction.onabort = () => reject(transaction.error || new Error("Local chart transaction was cancelled."));
+    });
+  } finally {
+    db.close();
+  }
+}
+
 async function refreshOfflineChartLibrary() {
-  const panel = document.querySelector("#offline-chart-library");
   const list = document.querySelector("#offline-chart-list");
   const status = document.querySelector("#offline-chart-status");
-  if (!window.caches) {
-    panel.hidden = true;
-    return;
+  const documents = [];
+  let cacheCount = 0;
+  let localCharts = [];
+  let localError = "";
+  if (window.caches) {
+    try {
+      const cache = await caches.open(offlineChartCacheName);
+      for (const request of await cache.keys()) {
+        const url = new URL(request.url);
+        if (url.origin !== location.origin) continue;
+        const procedure = url.pathname.match(/^\/api\/v1\/procedures\/([A-Z0-9]{3,4})\/files\/([A-Za-z0-9_-]+\.pdf)$/);
+        const vfr = url.pathname.match(/^\/api\/v1\/vfr\/files\/([A-Za-z0-9_-]+\.pdf)$/);
+        if (procedure) documents.push({ kind: "cache", request, label: `FAA procedures · ${procedure[1]} · ${procedure[2]}`, cache });
+        else if (vfr) documents.push({ kind: "cache", request, label: `FAA VFR chart · ${vfr[1]}`, cache });
+      }
+      cacheCount = documents.length;
+    } catch {
+      localError = " FAA chart cache could not be read.";
+    }
   }
   try {
-    const cache = await caches.open(offlineChartCacheName);
-    const documents = (await cache.keys()).flatMap((request) => {
-      const url = new URL(request.url);
-      if (url.origin !== location.origin) return [];
-      const procedure = url.pathname.match(/^\/api\/v1\/procedures\/([A-Z0-9]{3,4})\/files\/([A-Za-z0-9_-]+\.pdf)$/);
-      if (procedure) return [{ request, label: `FAA procedures · ${procedure[1]} · ${procedure[2]}` }];
-      const vfr = url.pathname.match(/^\/api\/v1\/vfr\/files\/([A-Za-z0-9_-]+\.pdf)$/);
-      if (vfr) return [{ request, label: `FAA VFR chart · ${vfr[1]}` }];
-      return [];
-    });
-    list.replaceChildren();
-    for (const documentInfo of documents) {
-      const item = document.createElement("li");
-      item.className = "procedure-item";
-      const link = document.createElement("a");
-      link.className = "procedure-link";
-      link.href = documentInfo.request.url;
-      link.target = "_blank";
-      link.rel = "noreferrer";
-      link.textContent = `Open ${documentInfo.label} ↗`;
-      const remove = document.createElement("button");
-      remove.className = "secondary-button";
-      remove.type = "button";
-      remove.textContent = "Remove";
-      remove.setAttribute("aria-label", `Remove ${documentInfo.label} from this device`);
-      remove.addEventListener("click", async () => {
-        remove.disabled = true;
-        try {
-          await cache.delete(documentInfo.request);
-          await refreshOfflineChartLibrary();
-        } catch {
-          status.textContent = "Could not remove this saved PDF from browser storage.";
-          remove.disabled = false;
-        }
-      });
-      item.append(link, remove);
-      list.append(item);
+    localCharts = await withLocalChartStore("readonly", (store) => store.getAll());
+    for (const chart of localCharts) {
+      documents.push({ kind: "local", chart, label: `${chart.title} · ${chart.source} · ${chart.edition}` });
     }
-    panel.hidden = documents.length === 0;
-    status.textContent = `${documents.length} FAA PDF${documents.length === 1 ? "" : "s"} saved in this browser. Browser storage may be limited or evicted; verify chart currency before use.`;
-  } catch {
-    panel.hidden = false;
-    status.textContent = "Saved PDFs could not be read from browser storage.";
+  } catch (error) {
+    localError += ` ${error.message || "Imported chart storage is unavailable."}`;
   }
+  for (const url of localChartObjectURLs.values()) URL.revokeObjectURL(url);
+  localChartObjectURLs.clear();
+  list.replaceChildren();
+  for (const documentInfo of documents) {
+    const item = document.createElement("li");
+    item.className = "procedure-item";
+    const link = document.createElement("a");
+    link.className = "procedure-link";
+    link.href = documentInfo.kind === "cache"
+      ? documentInfo.request.url
+      : URL.createObjectURL(documentInfo.chart.file);
+    if (documentInfo.kind === "local") localChartObjectURLs.set(documentInfo.chart.id, link.href);
+    link.target = "_blank";
+    link.rel = "noreferrer";
+    link.textContent = `Open ${documentInfo.label} ↗`;
+    const remove = document.createElement("button");
+    remove.className = "secondary-button";
+    remove.type = "button";
+    remove.textContent = "Remove";
+    remove.setAttribute("aria-label", `Remove ${documentInfo.label} from this device`);
+    remove.addEventListener("click", async () => {
+      remove.disabled = true;
+      try {
+        if (documentInfo.kind === "cache") await documentInfo.cache.delete(documentInfo.request);
+        else await withLocalChartStore("readwrite", (store) => store.delete(documentInfo.chart.id));
+        await refreshOfflineChartLibrary();
+      } catch {
+        document.querySelector("#local-chart-status").textContent = "Could not remove this saved PDF from browser storage.";
+        remove.disabled = false;
+      }
+    });
+    item.append(link, remove);
+    list.append(item);
+  }
+  const faaCount = cacheCount;
+  const localCount = localCharts.length;
+  status.textContent = `${faaCount} FAA PDF${faaCount === 1 ? "" : "s"} and ${localCount} imported PDF${localCount === 1 ? "" : "s"} saved in this browser. Storage may be limited or evicted; verify each chart’s currency before use.${localError}`;
+}
+
+async function saveLocalChart(chart) {
+  const id = window.crypto?.randomUUID
+    ? window.crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  await withLocalChartStore("readwrite", (store) => store.add({ ...chart, id, savedAt: new Date().toISOString() }));
 }
 
 function openPersonalBriefingDB() {
@@ -1407,6 +1466,40 @@ airportDirectoryButton.addEventListener("click", async () => {
 });
 
 const personalBriefingForm = document.querySelector("#personal-briefing-form");
+const localChartForm = document.querySelector("#local-chart-form");
+localChartForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const title = document.querySelector("#local-chart-title").value.trim();
+  const source = document.querySelector("#local-chart-source").value.trim();
+  const edition = document.querySelector("#local-chart-edition").value.trim();
+  const file = document.querySelector("#local-chart-file").files[0];
+  const saveButton = document.querySelector("#save-local-chart");
+  const status = document.querySelector("#local-chart-status");
+  if (!title || !source || !edition || !file) {
+    status.textContent = "Enter the chart name, official source, edition/date, and PDF file.";
+    return;
+  }
+  if (file.size > 50 * 1024 * 1024) {
+    status.textContent = "This PDF exceeds the 50 MiB per-file limit.";
+    return;
+  }
+  if (!/\.pdf$/i.test(file.name) || file.size < 5 || new TextDecoder().decode(await file.slice(0, 5).arrayBuffer()) !== "%PDF-") {
+    status.textContent = "Choose a valid PDF file.";
+    return;
+  }
+  saveButton.disabled = true;
+  status.textContent = "Saving this PDF in browser storage…";
+  try {
+    await saveLocalChart({ title, source, edition, file });
+    localChartForm.reset();
+    await refreshOfflineChartLibrary();
+    status.textContent = "Saved on this device. FP does not verify or refresh charts; confirm current edition and provider terms before use.";
+  } catch (error) {
+    status.textContent = error.message || "Could not save this PDF in browser storage.";
+  } finally {
+    saveButton.disabled = false;
+  }
+});
 personalBriefingForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const source = document.querySelector("#personal-briefing-source").value.trim();
