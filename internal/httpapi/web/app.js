@@ -1187,6 +1187,9 @@ const regionalNotamSources = new Map([
   ["AT", { name: "Austro Control Homebriefing", url: "https://www.homebriefing.com/", note: "Official Austrian portal provides route, area, and aerodrome PIBs. Registration may be required; FP does not retrieve or cache notices." }],
   ["CH", { name: "skybriefing Switzerland NOTAM", url: "https://www.skybriefing.com/en/services/notam-briefing", note: "Official skyguide AIM briefing service offers tailored NOTAM products. Check portal access, issue time, and briefing scope; FP does not retrieve or cache notices." }],
   ["SE", { name: "LFV Sweden AROWeb", url: "https://aro.lfv.se/", note: "Official LFV AIS service provides Swedish NOTAM and pre-flight information. Check current issue time and briefing scope; FP does not retrieve or cache notices." }],
+  ["DK", { name: "Naviair Denmark Briefing", url: "https://briefing.naviair.dk/", note: "Official Naviair briefing shows active NOTAMs and SNOWTAMs in Danish FIR. Check issue time and geographic scope; FP does not retrieve or cache notices." }],
+  ["GR", { name: "HASP Greece Valid NOTAMs", url: "https://www.ypa.gr/en/aip/publications/notam/valid-notam/As-Published/", note: "Official published valid-NOTAM list, not a route-specific PIB. If unavailable, obtain a current briefing through Greek AIS/ARO or EAD; FP does not retrieve or cache notices." }],
+  ["PL", { name: "PANSA Poland Integrated Web Briefing", url: "https://iwb.pansa.pl/", note: "Official PANSA briefing portal provides tailored PIBs. Use the current route/aerodrome/FIR scope and issue time; FP does not retrieve or cache notices." }],
 ]);
 
 function setRegionalNotamSource(country) {
