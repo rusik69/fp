@@ -1193,6 +1193,7 @@ const regionalNotamSources = new Map([
   ["HK", { name: "Hong Kong AIS NOTAM Website", url: "https://www.notam.ais.gov.hk/", note: "Official Hong Kong NOTAM website publishes Series A/C and SNOWTAM with a last-updated time. This is not a route-specific PIB; check freshness and scope; FP does not retrieve or cache notices." }],
   ["KR", { name: "Korea AIM NOTAM / PIB", url: "https://aim.koca.go.kr/pib/makeReport.do?language=en_US", note: "Official Korean AIM provides valid NOTAM search and pre-flight PIB tools. Check service access, current issue time, and briefing scope; FP does not retrieve or cache notices." }],
   ["PH", { name: "CAAP Philippines Active NOTAM Search", url: "https://ais.caap.gov.ph/notam-overview", note: "Official CAAP portal searches active NOTAMs by location, number, and text; expired notices are excluded and this is not a route PIB. Check current update time; FP does not retrieve or cache notices." }],
+  ["UG", { name: "Uganda CAA AIM AviWeb PIB", url: "https://aim.caa.co.ug/AviWeb", note: "Official Uganda CAA AIM portal prepares PIBs with NOTAM, SNOWTAM, and ASHTAM; sign-in is required. Verify issue time and scope; FP does not retrieve or cache notices." }],
 ]);
 
 function setRegionalNotamSource(country) {
