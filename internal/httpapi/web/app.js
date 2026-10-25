@@ -1149,7 +1149,14 @@ const aipAeroRoutes = new Map([
   ["GB", "uk"], ["US", "us"], ["UZ", "uz/en"], ["WF", "wf/en"]
 ]);
 
+const asecnaNotamSource = {
+  name: "ASECNA NOTAM Consultation",
+  url: "https://ais.asecna.aero/en/ntm/notam.php",
+  note: "Official ASECNA portal filters NOTAM by BNI, FIR, country, and aerodrome for participating African states. Select the applicable scope and verify issue/validity; FP does not retrieve or cache notices."
+};
+const asecnaNotamCountries = ["BJ", "BF", "CM", "CF", "KM", "YT", "CG", "CI", "GA", "GM", "GW", "GQ", "MG", "ML", "MR", "NE", "RE", "SN", "TD", "TG"];
 const regionalNotamSources = new Map([
+  ...asecnaNotamCountries.map((country) => [country, asecnaNotamSource]),
   ["CA", { name: "NAV CANADA CFPS", url: "https://plan.navcanada.ca/", note: "Official Canadian flight-planning service. Open it directly for route or geographic NOTAM lookup; FP does not retrieve or cache its data." }],
   ["MX", { name: "SENEAM NOTAM", url: "https://apps.seneam.gob.mx/notam/", note: "Official Mexican NOTAM portal. FP does not retrieve or cache its data." }],
   ["BR", { name: "AISWEB Brazil", url: "https://aisweb.decea.mil.br/?i=notam", note: "Official DECEA AIS portal with NOTAM listings. Verify the current briefing and validity on AISWEB." }],
