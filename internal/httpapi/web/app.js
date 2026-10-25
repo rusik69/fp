@@ -187,6 +187,7 @@ function renderPIREPs(reports) {
   const section = document.querySelector("#pirep-section");
   const list = document.querySelector("#pirep-list");
   list.replaceChildren();
+  pirepReports = reports;
   section.hidden = false;
   document.querySelector("#pirep-status").textContent = reports.length ? `${reports.length} report${reports.length === 1 ? "" : "s"} · AviationWeather.gov; coverage is limited outside the U.S. and North Atlantic.` : "No reports returned. Coverage is limited outside the U.S. and North Atlantic; that does not confirm no pilot reports exist.";
   for (const report of reports) {
@@ -199,6 +200,10 @@ function renderPIREPs(reports) {
     item.append(time, text);
     list.append(item);
   }
+  if (selectedAirport && sigmetIndex) {
+    const now = Date.now() / 1000;
+    drawSIGMETMap((sigmetIndex.items || []).filter((report) => Number(report.validTimeFrom) <= now && now < Number(report.validTimeTo)));
+  }
 }
 
 let sigmetIndex = null;
@@ -207,6 +212,7 @@ let sigmetIsLocal = false;
 const sigmetStorageKey = "fp-sigmet-index";
 let selectedAirport = null;
 let currentFavoriteStation = "";
+let pirepReports = [];
 let airspaceData = null;
 let airspaceState = "unavailable";
 let tfrData = null;
@@ -438,6 +444,7 @@ function drawSIGMETMap(reports) {
   const showAirspace = document.querySelector("#sigmet-map-show-airspace").checked;
   const showAirports = document.querySelector("#sigmet-map-show-airports").checked;
   const showNavaids = document.querySelector("#sigmet-map-show-navaids").checked;
+  const showPIREPs = document.querySelector("#sigmet-map-show-pireps").checked;
   const appendSVG = (name, attributes, parent = map) => {
     const element = document.createElementNS(namespace, name);
     for (const [key, value] of Object.entries(attributes)) element.setAttribute(key, String(value));
@@ -506,6 +513,23 @@ function drawSIGMETMap(reports) {
     title.textContent = `${firstText(navaid, ["ident"]) || "Navaid"} · ${firstText(navaid, ["type"])} · ${firstText(navaid, ["frequency"]) || "frequency unavailable"} · OurAirports reference`;
     nearbyNavaidCount++;
   }
+  let mappedPIREPCount = 0;
+  if (showPIREPs) {
+    const pirepRadiusNM = Math.min(sigmetMapRangeNM, 100);
+    for (const report of pirepReports) {
+      const point = projectSIGMETCoordinate(report, selectedAirport);
+      if (!point || point.x * point.x + point.y * point.y > pirepRadiusNM * pirepRadiusNM) continue;
+      const marker = appendSVG("circle", {
+        cx: center.x + point.x * scale,
+        cy: center.y - point.y * scale,
+        r: 4.5,
+        class: "sigmet-pirep-marker"
+      });
+      const title = appendSVG("title", {}, marker);
+      title.textContent = `PIREPs · ${formatReportTime(report.obsTime || report.reportTime || report.receiptTime)} · ${(firstText(report, ["rawOb"]) || "Pilot report details unavailable.").slice(0, 240)}`;
+      mappedPIREPCount++;
+    }
+  }
   appendSVG("circle", { cx: center.x, cy: center.y, r: 6, class: "sigmet-airport-marker" });
   const airportTitle = appendSVG("title", {}, map.lastElementChild);
   airportTitle.textContent = `${firstText(selectedAirport, ["icaoId", "name"]) || "Selected airport"} · map center`;
@@ -514,7 +538,8 @@ function drawSIGMETMap(reports) {
     showTFRs ? `${tfrResult.polygonCount} FAA TFR polygons` : "FAA TFR layer hidden",
     showAirspace ? `${airspaceCount} FAA airspace polygons` : "FAA airspace layer hidden",
     showAirports ? `${nearbyAirportCount} reference airports` : "Airport reference layer hidden",
-    showNavaids ? `${nearbyNavaidCount} navigation aids` : "Navaid reference layer hidden"
+    showNavaids ? `${nearbyNavaidCount} navigation aids` : "Navaid layer hidden",
+    showPIREPs ? `${mappedPIREPCount} PIREP location${mappedPIREPCount === 1 ? "" : "s"} (100 NM, 6 hours)` : "PIREP layer hidden"
   ].join(", ");
   map.setAttribute("aria-label", `Schematic ${sigmetMapRangeNM} NM map centered on ${firstText(selectedAirport, ["icaoId", "ident", "name"]) || "selected airport"}; ${layerSummary}`);
   const fetchedAt = airspaceData?.properties?.fetchedAt;
@@ -533,7 +558,10 @@ function drawSIGMETMap(reports) {
   const referenceStatus = !airportRecords
     ? "Save the airport directory to add nearby airport and navigation-aid reference points."
     : `${showAirports ? `${nearbyAirportCount} nearby airports` : "Airport reference layer hidden"} and ${showNavaids ? `${nearbyNavaidCount} navigation aids` : "navaid reference layer hidden"} within ${nearbyReferenceRadiusNM} NM.`;
-  status.textContent = `${sigmetMapStatus} ${referenceStatus}${tfrStatus}${airspaceNote}`;
+  const pirepMapStatus = showPIREPs
+    ? ` ${mappedPIREPCount} PIREP location${mappedPIREPCount === 1 ? "" : "s"} shown; feed requested within 100 NM for the previous 6 hours.`
+    : " PIREP map layer hidden; listed reports remain available.";
+  status.textContent = `${sigmetMapStatus} ${pirepMapStatus} ${referenceStatus}${tfrStatus}${airspaceNote}`;
   return nearbyCount;
 }
 

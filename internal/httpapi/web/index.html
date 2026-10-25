@@ -89,9 +89,10 @@
             <label><input id="sigmet-map-show-tfrs" type="checkbox" checked> FAA TFRs</label>
             <label><input id="sigmet-map-show-airports" type="checkbox" checked> Airports</label>
             <label><input id="sigmet-map-show-navaids" type="checkbox" checked> Navaids</label>
+            <label><input id="sigmet-map-show-pireps" type="checkbox" checked> PIREPs (100 NM · 6 h)</label>
           </div>
-          <svg id="sigmet-map" viewBox="0 0 760 540" role="img" aria-label="Schematic active SIGMET positions around the selected airport"></svg>
-          <p class="sigmet-map-key">Red: convective, tropical, or volcanic ash · Yellow: turbulence, icing, or mountain wave · Teal: other hazards · Blue: FAA class airspace · Gold: FAA current TFR locations · Gray dots: nearby airports · Gold triangles: nearby radio navigation aids</p>
+          <svg id="sigmet-map" viewBox="0 0 760 540" role="img" aria-label="Schematic weather and aviation reference map around the selected airport"></svg>
+          <p class="sigmet-map-key">Red: convective, tropical, or volcanic ash · Yellow: turbulence, icing, or mountain wave · Teal: other hazards and PIREP locations (100 NM, 6 h) · Blue: FAA class airspace · Gold: FAA current TFR locations · Gray dots: nearby airports · Gold triangles: nearby radio navigation aids</p>
           <p id="sigmet-map-status" class="airport-info-note"></p>
           <section class="tfr-nearby" aria-labelledby="tfr-nearby-title">
             <h4 id="tfr-nearby-title">FAA TFR locations within range</h4>
