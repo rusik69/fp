@@ -1190,6 +1190,9 @@ const regionalNotamSources = new Map([
   ["DK", { name: "Naviair Denmark Briefing", url: "https://briefing.naviair.dk/", note: "Official Naviair briefing shows active NOTAMs and SNOWTAMs in Danish FIR. Check issue time and geographic scope; FP does not retrieve or cache notices." }],
   ["GR", { name: "HASP Greece Valid NOTAMs", url: "https://www.ypa.gr/en/aip/publications/notam/valid-notam/As-Published/", note: "Official published valid-NOTAM list, not a route-specific PIB. If unavailable, obtain a current briefing through Greek AIS/ARO or EAD; FP does not retrieve or cache notices." }],
   ["PL", { name: "PANSA Poland Integrated Web Briefing", url: "https://iwb.pansa.pl/", note: "Official PANSA briefing portal provides tailored PIBs. Use the current route/aerodrome/FIR scope and issue time; FP does not retrieve or cache notices." }],
+  ["HK", { name: "Hong Kong AIS NOTAM Website", url: "https://www.notam.ais.gov.hk/", note: "Official Hong Kong NOTAM website publishes Series A/C and SNOWTAM with a last-updated time. This is not a route-specific PIB; check freshness and scope; FP does not retrieve or cache notices." }],
+  ["KR", { name: "Korea AIM NOTAM / PIB", url: "https://aim.koca.go.kr/pib/makeReport.do?language=en_US", note: "Official Korean AIM provides valid NOTAM search and pre-flight PIB tools. Check service access, current issue time, and briefing scope; FP does not retrieve or cache notices." }],
+  ["PH", { name: "CAAP Philippines Active NOTAM Search", url: "https://ais.caap.gov.ph/notam-overview", note: "Official CAAP portal searches active NOTAMs by location, number, and text; expired notices are excluded and this is not a route PIB. Check current update time; FP does not retrieve or cache notices." }],
 ]);
 
 function setRegionalNotamSource(country) {
