@@ -82,11 +82,19 @@
               <option value="500" selected>500 NM</option>
             </select>
           </div>
+          <div class="sigmet-map-layers" role="group" aria-label="Map layers">
+            <span>Layers</span>
+            <label><input id="sigmet-map-show-sigmets" type="checkbox" checked> SIGMETs</label>
+            <label><input id="sigmet-map-show-airspace" type="checkbox" checked> FAA airspace</label>
+            <label><input id="sigmet-map-show-tfrs" type="checkbox" checked> FAA TFRs</label>
+            <label><input id="sigmet-map-show-airports" type="checkbox" checked> Airports</label>
+            <label><input id="sigmet-map-show-navaids" type="checkbox" checked> Navaids</label>
+          </div>
           <svg id="sigmet-map" viewBox="0 0 760 540" role="img" aria-label="Schematic active SIGMET positions around the selected airport"></svg>
           <p class="sigmet-map-key">Red: convective, tropical, or volcanic ash · Yellow: turbulence, icing, or mountain wave · Teal: other hazards · Blue: FAA class airspace · Gold: FAA current TFR locations · Gray dots: nearby airports · Gold triangles: nearby radio navigation aids</p>
           <p id="sigmet-map-status" class="airport-info-note"></p>
           <section class="tfr-nearby" aria-labelledby="tfr-nearby-title">
-            <h4 id="tfr-nearby-title">FAA TFR locations shown</h4>
+            <h4 id="tfr-nearby-title">FAA TFR locations within range</h4>
             <ul id="tfr-list" class="tfr-list" aria-label="FAA TFR location details"></ul>
           </section>
           <p class="sigmet-map-note">Schematic map with a selectable 100, 250, or 500 NM range, not a navigation chart. TFRs come from the FAA current location layer (U.S.-focused); polygons may be incomplete and title dates are not parsed into active/expired status. This supplemental display is not an official briefing or navigation source; verify current NOTAMs and restrictions directly with FAA before flight. FAA class airspace is U.S., Puerto Rico, and U.S. Virgin Islands only and reference-only—not for navigation or clearances. Airport and radio-aid points are reference data; SIGMET feed may not include every local advisory.</p>
