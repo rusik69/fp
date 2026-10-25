@@ -12,6 +12,7 @@
 .airspace-shape{fill:#5bb9ff;fill-opacity:.14;stroke:#5bb9ff;stroke-width:1.5;stroke-opacity:.9}
 .tfr-shape{fill:#ffca50;fill-opacity:.18;stroke:#ffb000;stroke-width:1.8;stroke-opacity:.95}
 .tfr-nearby{margin-top:10px}.tfr-nearby h4{margin:0 0 6px;font-size:12px}.tfr-list{display:grid;gap:6px;list-style:none;margin:0;padding:0}.tfr-list li{display:grid;gap:3px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;color:var(--text);font-size:11px;overflow-wrap:anywhere}.tfr-list li span{color:var(--muted)}
+.offline-chart-manager{margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}.offline-chart-manager>p:first-child{margin:0 0 10px;color:var(--muted);font-size:11px}.offline-chart-manager-actions{display:flex;flex-wrap:wrap;gap:8px}.offline-chart-manager-actions button{min-height:38px;padding:8px 12px;font-size:11px}.offline-chart-selection{display:flex;align-items:center;gap:5px;flex:none;color:var(--muted);font-size:11px;white-space:nowrap}.offline-chart-selection input{width:16px;height:16px;margin:0}
 .regional-links{display:flex;flex-direction:column;gap:8px;min-width:190px}
 .catalog-download{margin-top:18px}.catalog-download .hint{max-width:600px}
 .sigmet-nearby-airport-marker{fill:var(--muted);stroke:var(--bg);stroke-width:1}

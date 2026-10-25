@@ -18,6 +18,7 @@ function setConnection() {
   const online = navigator.onLine;
   connection.textContent = online ? "Online" : "Offline";
   connection.classList.toggle("offline", !online);
+  updateOfflineChartControls();
 }
 
 function firstText(record, keys) {
@@ -830,6 +831,19 @@ document.querySelector("#favorite-airport").addEventListener("click", () => {
 });
 const procedurePrefix = "fp-procedures:";
 
+const offlineChartSelections = new Map();
+
+function createOfflineChartSelection(url, title) {
+  const wrapper = document.createElement("label");
+  wrapper.className = "offline-chart-selection";
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.checked = offlineChartSelections.has(url);
+  checkbox.dataset.url = url;
+  checkbox.dataset.title = title;
+  wrapper.append(checkbox, document.createTextNode("Save offline"));
+  return wrapper;
+}
 function renderProcedures(index, local = false) {
   const items = document.querySelector("#procedure-list");
   items.replaceChildren();
@@ -852,7 +866,7 @@ function renderProcedures(index, local = false) {
     link.target = "_blank";
     link.rel = "noreferrer";
     link.textContent = procedure.downloaded ? "Open saved PDF ↗" : "Open / save ↗";
-    item.append(name, link);
+    item.append(createOfflineChartSelection(link.href, `${index.station} · ${procedure.name}`), name, link);
     items.append(item);
   }
 }
@@ -907,7 +921,7 @@ function renderVFR(index, local = false) {
     link.target = "_blank";
     link.rel = "noreferrer";
     link.textContent = chart.downloaded ? "Open saved PDF ↗" : "Open / save ↗";
-    item.append(name, link);
+    item.append(createOfflineChartSelection(link.href, `${chart.name} · ${chart.edition}`), name, link);
     list.append(item);
   }
   const stale = index.stale || local ? " · cached; check current edition" : "";
@@ -952,6 +966,104 @@ function showSavedVFR() {
 }
 const offlineChartCacheName = "fp-documents-v1";
 const personalBriefingDBName = "fp-personal-briefings";
+let offlineChartDownloadController = null;
+
+function formatStorageBytes(bytes) {
+  if (!Number.isFinite(bytes) || bytes < 0) return "unknown";
+  return bytes < 1024 * 1024 ? `${Math.round(bytes / 1024)} KiB` : `${(bytes / (1024 * 1024)).toFixed(1)} MiB`;
+}
+
+async function refreshOfflineStorageEstimate() {
+  const status = document.querySelector("#offline-storage-estimate");
+  try {
+    const estimate = await navigator.storage?.estimate?.();
+    if (!estimate || !Number.isFinite(estimate.usage)) {
+      status.textContent = "Browser storage usage is unavailable; saved files may be evicted.";
+      return;
+    }
+    const quota = Number.isFinite(estimate.quota) ? estimate.quota : null;
+    const percent = quota ? Math.round(estimate.usage * 100 / quota) : null;
+    status.textContent = `Browser storage: ${formatStorageBytes(estimate.usage)} used of ${quota ? formatStorageBytes(quota) : "unknown quota"}${percent === null ? "" : ` (${percent}%)`}. Storage may still be cleared or evicted.`;
+  } catch {
+    status.textContent = "Could not estimate browser storage usage; saved files may be evicted.";
+  }
+}
+
+function updateOfflineChartControls() {
+  const count = offlineChartSelections.size;
+  const status = document.querySelector("#offline-selection-count");
+  const button = document.querySelector("#download-selected-charts");
+  button.disabled = count === 0 || !navigator.onLine || !window.caches || Boolean(offlineChartDownloadController);
+  status.textContent = count
+    ? `${count} chart${count === 1 ? "" : "s"} selected${navigator.onLine ? "." : "; connect to download."}`
+    : "No charts selected.";
+}
+
+async function downloadSelectedCharts() {
+  if (offlineChartDownloadController || !navigator.onLine || !window.caches) return;
+  const selections = [...offlineChartSelections.entries()].map(([url, title]) => ({ url, title }));
+  if (!selections.length) return;
+  const controller = new AbortController();
+  offlineChartDownloadController = controller;
+  const status = document.querySelector("#offline-download-status");
+  const cancelButton = document.querySelector("#cancel-chart-downloads");
+  let completed = 0;
+  cancelButton.hidden = false;
+  updateOfflineChartControls();
+  try {
+    const cache = await caches.open(offlineChartCacheName);
+    for (const selection of selections) {
+      if (controller.signal.aborted) break;
+      const url = new URL(selection.url, location.href);
+      if (url.origin !== location.origin || !/^\/api\/v1\/(?:procedures\/[A-Z0-9]{3,4}\/files\/[A-Za-z0-9_-]+\.pdf|vfr\/files\/[A-Za-z0-9_-]+\.pdf)$/.test(url.pathname)) {
+        throw new Error(`Rejected unexpected chart URL for ${selection.title}.`);
+      }
+      const target = new URL(url);
+      target.searchParams.set("fp-download", "1");
+      status.textContent = `Downloading ${completed + 1}/${selections.length}: ${selection.title}…`;
+      const response = await fetch(target, { signal: controller.signal, headers: { Accept: "application/pdf" } });
+      if (!response.ok) throw new Error(`${selection.title}: download failed (${response.status}).`);
+      if (!response.headers.get("content-type")?.toLowerCase().includes("application/pdf")) {
+        throw new Error(`${selection.title}: the server did not return a PDF.`);
+      }
+      const expectedBytes = Number(response.headers.get("content-length")) || 0;
+      const cacheWrite = cache.put(url.href, response.clone()).then(() => null, (error) => error);
+      const reader = response.body?.getReader();
+      let receivedBytes = 0;
+      if (reader) {
+        while (true) {
+          const part = await reader.read();
+          if (part.done) break;
+          receivedBytes += part.value.byteLength;
+          status.textContent = `Downloading ${completed + 1}/${selections.length}: ${selection.title} · ${formatStorageBytes(receivedBytes)}${expectedBytes ? ` of ${formatStorageBytes(expectedBytes)}` : ""}`;
+        }
+      } else {
+        receivedBytes = (await response.blob()).size;
+      }
+      const cacheWriteError = await cacheWrite;
+      if (cacheWriteError) throw cacheWriteError;
+      if (!await cache.match(url.href)) throw new Error(`${selection.title}: browser storage did not retain the PDF.`);
+      offlineChartSelections.delete(selection.url);
+      completed++;
+      await refreshOfflineStorageEstimate();
+      updateOfflineChartControls();
+    }
+    status.textContent = controller.signal.aborted
+      ? `${completed} chart${completed === 1 ? "" : "s"} saved; remaining downloads cancelled.`
+      : `${completed} chart${completed === 1 ? "" : "s"} saved for offline use.`;
+  } catch (error) {
+    status.textContent = error.name === "AbortError"
+      ? `${completed} chart${completed === 1 ? "" : "s"} saved; remaining downloads cancelled.`
+      : `${completed} chart${completed === 1 ? "" : "s"} saved. ${error.message || "Download failed."} Earlier saved files were kept.`;
+  } finally {
+    offlineChartDownloadController = null;
+    cancelButton.hidden = true;
+    await refreshOfflineChartLibrary();
+    updateOfflineChartControls();
+  }
+}
+
+
 
 async function refreshStoragePersistenceStatus() {
   const button = document.querySelector("#request-storage-persistence");
@@ -1108,6 +1220,7 @@ async function refreshOfflineChartLibrary() {
   const faaCount = cacheCount;
   const localCount = localCharts.length;
   status.textContent = `${faaCount} FAA PDF${faaCount === 1 ? "" : "s"} and ${localCount} imported PDF${localCount === 1 ? "" : "s"} saved in this browser. Storage may be limited or evicted; verify each chart’s currency before use.${localError}`;
+  void refreshOfflineStorageEstimate();
 }
 
 async function saveLocalChart(chart) {
@@ -1636,6 +1749,27 @@ document.addEventListener("visibilitychange", () => {
 document.querySelector("#vfr-filter").addEventListener("input", () => {
   if (vfrIndex) renderVFR(vfrIndex);
 });
+document.querySelector("#briefing").addEventListener("change", (event) => {
+  const checkbox = event.target.closest(".offline-chart-selection input");
+  if (!checkbox) return;
+  if (checkbox.checked) offlineChartSelections.set(checkbox.dataset.url, checkbox.dataset.title);
+  else offlineChartSelections.delete(checkbox.dataset.url);
+  updateOfflineChartControls();
+});
+document.querySelector("#select-visible-charts").addEventListener("click", () => {
+  for (const checkbox of document.querySelectorAll("#procedure-list .offline-chart-selection input, #vfr-list .offline-chart-selection input")) {
+    checkbox.checked = true;
+    offlineChartSelections.set(checkbox.dataset.url, checkbox.dataset.title);
+  }
+  updateOfflineChartControls();
+});
+document.querySelector("#clear-chart-selection").addEventListener("click", () => {
+  offlineChartSelections.clear();
+  for (const checkbox of document.querySelectorAll(".offline-chart-selection input")) checkbox.checked = false;
+  updateOfflineChartControls();
+});
+document.querySelector("#download-selected-charts").addEventListener("click", downloadSelectedCharts);
+document.querySelector("#cancel-chart-downloads").addEventListener("click", () => offlineChartDownloadController?.abort());
 document.querySelector("#sigmet-filter").addEventListener("input", () => {
   if (sigmetIndex) renderSIGMETs(sigmetIndex, sigmetIsLocal);
 });
@@ -1655,6 +1789,7 @@ for (const layer of document.querySelectorAll(".sigmet-map-layers input[type=che
 }
 window.addEventListener("online", setConnection);
 window.addEventListener("offline", setConnection);
+void refreshOfflineStorageEstimate();
 refreshFavoriteAirports();
 setConnection();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});

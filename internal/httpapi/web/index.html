@@ -114,6 +114,18 @@
           <span id="procedure-cycle" class="document-meta">Load an airport to find its current cycle.</span>
         </div>
         <p id="procedure-status" class="document-status" role="status"></p>
+        <div class="offline-chart-manager" id="offline-chart-manager">
+          <p>Select charts from either catalog and save them to this browser for offline access. Existing saved editions remain available until removed.</p>
+          <div class="offline-chart-manager-actions">
+            <button id="select-visible-charts" class="secondary-button" type="button">Select visible</button>
+            <button id="clear-chart-selection" class="secondary-button" type="button">Clear selection</button>
+            <button id="download-selected-charts" type="button" disabled>Download selected</button>
+            <button id="cancel-chart-downloads" class="secondary-button" type="button" hidden>Cancel downloads</button>
+          </div>
+          <p id="offline-selection-count" class="document-status" role="status" aria-live="polite">No charts selected.</p>
+          <p id="offline-download-status" class="document-status" role="status" aria-live="polite">Download progress and results appear here.</p>
+          <p id="offline-storage-estimate" class="document-status" role="status"></p>
+        </div>
         <ul id="procedure-list" class="procedure-list"></ul>
       </section>
       <section class="documents" id="vfr-panel">
@@ -166,6 +178,7 @@
         <button id="save-local-chart" type="submit">Save PDF on this device</button>
       </form>
       <p id="local-chart-status" class="document-status" role="status" aria-live="polite">Imported files stay in this browser. FP does not fetch, validate, or refresh them; follow provider terms and verify current charts before flight.</p>
+      <p id="offline-chart-status" class="document-status" role="status" aria-live="polite">Checking saved chart PDFs…</p>
       <ul id="offline-chart-list" class="procedure-list"></ul>
     </section>
     <section class="documents personal-briefing" id="personal-briefing-archive">

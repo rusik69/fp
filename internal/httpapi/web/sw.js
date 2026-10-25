@@ -1,4 +1,4 @@
-const CACHE_NAME = "fp-shell-v38";
+const CACHE_NAME = "fp-shell-v40";
 const DOCUMENT_CACHE_NAME = "fp-documents-v1";
 const TFR_CACHE_NAME = "fp-faa-tfr-v1";
 const APP_SHELL = ["/", "/app.css", "/app.js", "/manifest.webmanifest", "/icon.svg", "/icon-180.png", "/icon-192.png", "/icon-512.png"];
@@ -19,9 +19,17 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (event.request.method !== "GET" || url.origin !== self.location.origin) return;
   const offlineChart = /^\/api\/v1\/(?:procedures\/[A-Z0-9]{3,4}\/files\/[A-Za-z0-9_-]+\.pdf|vfr\/files\/[A-Za-z0-9_-]+\.pdf)$/.test(url.pathname);
+  if (url.searchParams.get("fp-download") === "1") return;
   if (offlineChart) {
     event.respondWith((async () => {
       const cache = await caches.open(DOCUMENT_CACHE_NAME);
+      const cachedResponse = async () => {
+        const cached = await cache.match(event.request);
+        if (!cached) return null;
+        const headers = new Headers(cached.headers);
+        headers.set("X-FP-Offline-Cache", "true");
+        return new Response(cached.body, { status: cached.status, statusText: cached.statusText, headers });
+      };
       try {
         const response = await fetch(event.request);
         if (response.ok && response.headers.get("content-type")?.includes("application/pdf")) {
@@ -30,10 +38,11 @@ self.addEventListener("fetch", (event) => {
           } catch {
             // Storage quota or policy may prevent a local copy; keep the online response usable.
           }
+          return response;
         }
-        return response;
+        return await cachedResponse() || response;
       } catch {
-        return await cache.match(event.request) || Response.error();
+        return await cachedResponse() || Response.error();
       }
     })());
     return;
