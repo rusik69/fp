@@ -1118,7 +1118,11 @@ const regionalNotamSources = new Map([
   ["IT", { name: "ENAV Italy Pre-Flight Service", url: "https://www.enav.it/en/what-we-do/we-create-solutions-for-international-markets/aeronautical-information/pre-flight", note: "Official ENAV describes customer self-briefing and PIB retrieval including NOTAM. Confirm access and briefing validity with ENAV." }],
   ["NL", { name: "LVNL Netherlands Homebriefing", url: "https://hbs.ixosystem.eu/ixo/login.php", note: "Official LVNL Homebriefing supports flight preparation with AIP, NOTAM, and weather. Account access may be required." }],
   ["NO", { name: "Avinor Norway IPPC", url: "https://www.ippc.no/ippc/index.jsp", note: "Official briefing reports include NOTAM updated to report-production time. AIP Norway is copyrighted; follow Avinor's terms." }],
-  ["GB", { name: "NATS Aeronautical Information", url: "https://www.nats.aero/ais/", note: "Official UK AIS source. PIB access requires registration." }]
+  ["GB", { name: "NATS Aeronautical Information", url: "https://www.nats.aero/ais/", note: "Official UK AIS source. PIB access requires registration." }],
+  ["IE", { name: "AirNav Ireland Current PIB", url: "https://www.airnav.ie/air-traffic-management/notam-notice-to-airmen-24e348473e7b0153452e634c36c72213", note: "Official AirNav page links the current PIB containing notices issued by AirNav Ireland. Check its production/validity time and briefing scope." }],
+  ["KE", { name: "Kenya KCAA Online Briefing", url: "https://aim.kcaa.or.ke/cronos-portal/", note: "KCAA says online NOTAM/PIB access is granted after submitting its flight-planning and online-briefing request form. Confirm access and current briefing scope." }],
+  ["TH", { name: "AEROTHAI NOTAM Thai", url: "https://notamthai.aerothai.aero/main.aspx", note: "Official AEROTHAI portal offers NOTAM, SNOWTAM, ASHTAM, and PIB. Login/registration may be required and account activation may take up to 24 hours." }],
+  ["TZ", { name: "Tanzania TCAA NOTAM Search", url: "https://eservices.tcaa.go.tz/notams", note: "Official search is sourced from TCAA's Daily List of Valid NOTAMs, but is labeled informational for planning/familiarization. Verify current notices and validity before operations." }],
 ]);
 
 function setRegionalNotamSource(country) {

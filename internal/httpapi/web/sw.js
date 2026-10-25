@@ -1,4 +1,4 @@
-const CACHE_NAME = "fp-shell-v23";
+const CACHE_NAME = "fp-shell-v24";
 const DOCUMENT_CACHE_NAME = "fp-documents-v1";
 const TFR_CACHE_NAME = "fp-faa-tfr-v1";
 const APP_SHELL = ["/", "/app.css", "/app.js", "/manifest.webmanifest", "/icon.svg", "/icon-180.png", "/icon-192.png", "/icon-512.png"];
