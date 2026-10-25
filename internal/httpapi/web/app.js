@@ -1184,6 +1184,9 @@ const regionalNotamSources = new Map([
   ["TZ", { name: "Tanzania TCAA NOTAM Search", url: "https://eservices.tcaa.go.tz/notams", note: "Official search is sourced from TCAA's Daily List of Valid NOTAMs, but is labeled informational for planning/familiarization. Verify current notices and validity before operations." }],
   ["PE", { name: "CORPAC Peru NOTAM System", url: "https://www.gob.pe/institucion/corpac/pages/30918-notam-peru", note: "CORPAC's official instructions link its NOTAM system; username/password access is required and pilots must request credentials through AIS. FP does not retrieve or cache notices." }],
   ["PY", { name: "DINAC Paraguay Valid NOTAM Lists", url: "https://www.dinac.gov.py/v3/index.php/ais/documentacion-integrada/itemlist/category/75-lnv-lsita-de-notam-validos", note: "Official DINAC publishes valid-NOTAM lists by year. This is not a route-specific PIB; check the issue time and notice validity, and obtain the applicable current briefing." }],
+  ["AT", { name: "Austro Control Homebriefing", url: "https://www.homebriefing.com/", note: "Official Austrian portal provides route, area, and aerodrome PIBs. Registration may be required; FP does not retrieve or cache notices." }],
+  ["CH", { name: "skybriefing Switzerland NOTAM", url: "https://www.skybriefing.com/en/services/notam-briefing", note: "Official skyguide AIM briefing service offers tailored NOTAM products. Check portal access, issue time, and briefing scope; FP does not retrieve or cache notices." }],
+  ["SE", { name: "LFV Sweden AROWeb", url: "https://aro.lfv.se/", note: "Official LFV AIS service provides Swedish NOTAM and pre-flight information. Check current issue time and briefing scope; FP does not retrieve or cache notices." }],
 ]);
 
 function setRegionalNotamSource(country) {
