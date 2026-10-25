@@ -132,9 +132,12 @@
     <section class="documents" id="offline-chart-library">
       <div class="documents-heading">
         <div><p class="eyebrow">THIS DEVICE</p><h3>Saved chart PDFs</h3></div>
-        <button id="refresh-offline-charts" class="secondary-button" type="button">Refresh list</button>
+        <div class="offline-storage-actions">
+          <button id="request-storage-persistence" class="secondary-button" type="button">Protect offline data</button>
+          <button id="refresh-offline-charts" class="secondary-button" type="button">Refresh list</button>
+        </div>
       </div>
-      <p id="offline-chart-status" class="document-status" role="status">Save official chart PDFs here for offline access. Browser storage may be evicted; verify chart currency before use.</p>
+      <p id="storage-persistence-status" class="document-status" role="status" aria-live="polite">Checking whether this browser protects saved offline data from automatic eviction.</p>
       <form id="local-chart-form" class="personal-briefing-form">
         <label for="local-chart-title">Chart name</label>
         <input id="local-chart-title" type="text" maxlength="160" required placeholder="Example: EGLL ILS runway 27R">

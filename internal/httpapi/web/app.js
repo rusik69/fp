@@ -923,6 +923,58 @@ function showSavedVFR() {
 const offlineChartCacheName = "fp-documents-v1";
 const personalBriefingDBName = "fp-personal-briefings";
 
+async function refreshStoragePersistenceStatus() {
+  const button = document.querySelector("#request-storage-persistence");
+  const status = document.querySelector("#storage-persistence-status");
+  const storage = navigator.storage;
+  const canRequest = typeof storage?.persist === "function";
+  button.hidden = !canRequest;
+  button.disabled = true;
+  if (typeof storage?.persisted !== "function") {
+    button.disabled = !canRequest;
+    status.textContent = "This browser cannot report persistent storage status. Saved offline data may be evicted or cleared.";
+    return;
+  }
+  try {
+    const persisted = await storage.persisted();
+    button.disabled = persisted || !canRequest;
+    button.textContent = persisted ? "Storage protection granted" : "Protect offline data";
+    status.textContent = persisted
+      ? "Browser persistence is enabled for this app’s saved offline data. You can still clear it in browser settings; verify chart and briefing currency."
+      : "Saved offline data may be evicted automatically. Request browser storage protection; availability depends on browser and device.";
+  } catch {
+    button.disabled = !canRequest;
+    status.textContent = "Could not determine storage protection. Saved offline data may be evicted; browser settings can also clear it.";
+  }
+}
+
+document.querySelector("#request-storage-persistence").addEventListener("click", async (event) => {
+  const button = event.currentTarget;
+  const status = document.querySelector("#storage-persistence-status");
+  const request = navigator.storage?.persist;
+  if (typeof request !== "function") {
+    status.textContent = "This browser does not support a persistent storage request. Saved offline data may be evicted automatically.";
+    button.hidden = true;
+    return;
+  }
+  button.disabled = true;
+  status.textContent = "Requesting browser storage protection…";
+  try {
+    const granted = await request.call(navigator.storage);
+    button.disabled = granted;
+    button.textContent = granted ? "Storage protection granted" : "Protect offline data";
+    status.textContent = granted
+      ? "Browser persistence is enabled for this app’s saved offline data. You can still clear it in browser settings; verify chart and briefing currency."
+      : "The browser did not grant persistent storage. Saved offline data may be evicted automatically; verify chart and briefing currency.";
+  } catch {
+    button.disabled = false;
+    button.textContent = "Protect offline data";
+    status.textContent = "The browser storage request failed. Saved offline data may be evicted automatically.";
+  }
+});
+
+void refreshStoragePersistenceStatus();
+
 function openLocalChartDB() {
   return new Promise((resolve, reject) => {
     if (!window.indexedDB) {
