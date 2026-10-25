@@ -1123,6 +1123,8 @@ const regionalNotamSources = new Map([
   ["KE", { name: "Kenya KCAA Online Briefing", url: "https://aim.kcaa.or.ke/cronos-portal/", note: "KCAA says online NOTAM/PIB access is granted after submitting its flight-planning and online-briefing request form. Confirm access and current briefing scope." }],
   ["TH", { name: "AEROTHAI NOTAM Thai", url: "https://notamthai.aerothai.aero/main.aspx", note: "Official AEROTHAI portal offers NOTAM, SNOWTAM, ASHTAM, and PIB. Login/registration may be required and account activation may take up to 24 hours." }],
   ["TZ", { name: "Tanzania TCAA NOTAM Search", url: "https://eservices.tcaa.go.tz/notams", note: "Official search is sourced from TCAA's Daily List of Valid NOTAMs, but is labeled informational for planning/familiarization. Verify current notices and validity before operations." }],
+  ["PE", { name: "CORPAC Peru NOTAM System", url: "https://www.gob.pe/institucion/corpac/pages/30918-notam-peru", note: "CORPAC's official instructions link its NOTAM system; username/password access is required and pilots must request credentials through AIS. FP does not retrieve or cache notices." }],
+  ["PY", { name: "DINAC Paraguay Valid NOTAM Lists", url: "https://www.dinac.gov.py/v3/index.php/ais/documentacion-integrada/itemlist/category/75-lnv-lsita-de-notam-validos", note: "Official DINAC publishes valid-NOTAM lists by year. This is not a route-specific PIB; check the issue time and notice validity, and obtain the applicable current briefing." }],
 ]);
 
 function setRegionalNotamSource(country) {
