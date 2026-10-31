@@ -42,6 +42,36 @@
       </div>
     </section>
     <div id="message" class="message" role="status" aria-live="polite"></div>
+    <section class="documents provider-aviation" id="ibonav-aviation">
+      <div class="documents-heading">
+        <div><p class="eyebrow">AIP CHARTS · NOTAM · MAP</p><h3>International aeronautical map</h3></div>
+        <a class="notam-link" href="https://dev.ibonav.aero/general/roles" target="_blank" rel="noreferrer">Provider access requirements ↗</a>
+      </div>
+      <p class="document-status">The embedded ibonav.aero map provides its licensed chart catalog, georeferenced chart layers, and NOTAM map. Coverage and source currency vary by country and layer. It requires server-side provider roles and internet access; offline PDFs and NOTAM copies are separate.</p>
+      <p id="ibonav-map-status" class="document-status" role="status" aria-live="polite">Checking map service configuration…</p>
+      <iframe id="ibonav-map" title="ibonav.aero international aeronautical map" allow="fullscreen" referrerpolicy="no-referrer" loading="lazy" hidden></iframe>
+      <p class="map-source-note">Attribution: <a href="https://ibonav.aero/" target="_blank" rel="noreferrer">ibonav.aero</a>. Verify charts against the current State AIP and obtain the appropriate official preflight briefing. This map is supplemental and is not guaranteed to be complete or suitable as the sole navigation source.</p>
+    </section>
+    <section class="documents" id="ibonav-notams">
+      <div class="documents-heading">
+        <div><p class="eyebrow">PROVIDER NOTAM SEARCH</p><h3>Search available aerodrome and FIR NOTAMs</h3></div>
+        <span id="ibonav-notam-freshness" class="document-meta">Provider update time unavailable.</span>
+      </div>
+      <p class="document-status">Enter airport or FIR identifiers; include en-route FIRs for a route briefing. Results are source-provided NOTAM records, not a replacement for each State's official briefing. Successful searches are saved locally for offline reference and visibly marked when served from cache.</p>
+      <form id="ibonav-notam-form" class="notam-search-form">
+        <label for="ibonav-notam-locations">Aerodrome/FIR identifiers (comma-separated)</label>
+        <input id="ibonav-notam-locations" type="text" maxlength="100" required placeholder="e.g. EGLL,EGTT">
+        <div class="notam-time-range">
+          <label for="ibonav-notam-from">Flight window starts (UTC)</label>
+          <input id="ibonav-notam-from" type="datetime-local" required>
+          <label for="ibonav-notam-to">Flight window ends (UTC)</label>
+          <input id="ibonav-notam-to" type="datetime-local" required>
+        </div>
+        <button id="ibonav-notam-search" type="submit">Search NOTAMs</button>
+      </form>
+      <p id="ibonav-notam-status" class="document-status" role="status" aria-live="polite">Add airport/FIR codes and a UTC flight window to search.</p>
+      <ol id="ibonav-notam-results" class="ibonav-notam-results"></ol>
+    </section>
     <section id="briefing" class="briefing" hidden aria-live="polite">
       <div class="briefing-heading">
         <div><p class="eyebrow" id="source">AVIATIONWEATHER.GOV</p><h2 id="airport-title"></h2></div>

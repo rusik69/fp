@@ -1,7 +1,8 @@
-const CACHE_NAME = "fp-shell-v43";
+const CACHE_NAME = "fp-shell-v44";
 const DOCUMENT_CACHE_NAME = "fp-documents-v1";
 const TFR_CACHE_NAME = "fp-faa-tfr-v1";
 const APP_SHELL = ["/", "/app.css", "/app.js", "/manifest.webmanifest", "/icon.svg", "/icon-180.png", "/icon-192.png", "/icon-512.png"];
+const IBNAV_NOTAM_CACHE_NAME = "fp-ibonav-notams-v1";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
@@ -10,7 +11,7 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(caches.keys().then((keys) => Promise.all(
-    keys.filter((key) => key !== CACHE_NAME && key !== DOCUMENT_CACHE_NAME && key !== AIRSPACE_CACHE_NAME && key !== TFR_CACHE_NAME).map((key) => caches.delete(key))
+    keys.filter((key) => key !== CACHE_NAME && key !== DOCUMENT_CACHE_NAME && key !== AIRSPACE_CACHE_NAME && key !== TFR_CACHE_NAME && key !== IBNAV_NOTAM_CACHE_NAME).map((key) => caches.delete(key))
   )));
   self.clients.claim();
 });
@@ -87,6 +88,38 @@ self.addEventListener("fetch", (event) => {
         const headers = new Headers(fallback.headers);
         headers.set("X-FP-Offline-Cache", "true");
         return new Response(fallback.body, { status: fallback.status, statusText: fallback.statusText, headers });
+      }
+    })());
+    return;
+  }
+  if (url.pathname === "/api/v1/ibonav/notams") {
+    event.respondWith((async () => {
+      const cache = await caches.open(IBNAV_NOTAM_CACHE_NAME);
+      const cachedResponse = async () => {
+        const cached = await cache.match(event.request);
+        if (!cached) return null;
+        const headers = new Headers(cached.headers);
+        headers.set("X-FP-Offline-Cache", "true");
+        return new Response(cached.body, { status: cached.status, statusText: cached.statusText, headers });
+      };
+      try {
+        const response = await fetch(event.request);
+        if (response.ok) {
+          const body = await response.clone().json();
+          if (Array.isArray(body?.data?.notams) && Number.isInteger(body?.total) && body.total >= 0) {
+            try {
+              await cache.put(event.request, response.clone());
+              const keys = await cache.keys();
+              await Promise.all(keys.slice(0, Math.max(0, keys.length - 10)).map((key) => cache.delete(key)));
+            } catch {
+              // Storage quota must not make a valid live NOTAM response unusable.
+            }
+          }
+          return response;
+        }
+        return await cachedResponse() || response;
+      } catch {
+        return await cachedResponse() || Response.error();
       }
     })());
     return;

@@ -1826,3 +1826,202 @@ if (initialStation && /^[A-Za-z0-9]{3,4}$/.test(initialStation)) {
   stationInput.value = initialStation.toUpperCase();
   lookup(stationInput.value);
 }
+const ibonavMapFrame = document.querySelector("#ibonav-map");
+const ibonavMapStatus = document.querySelector("#ibonav-map-status");
+const ibonavNotamForm = document.querySelector("#ibonav-notam-form");
+const ibonavNotamStatus = document.querySelector("#ibonav-notam-status");
+const ibonavNotamResults = document.querySelector("#ibonav-notam-results");
+const ibonavNotamFreshness = document.querySelector("#ibonav-notam-freshness");
+const IBNAV_MAP_ORIGIN = "https://ais-map.ibosoft.net.tr";
+let ibonavMapRenewTimer;
+
+function ibonavSetUTCWindow() {
+  const start = new Date();
+  const end = new Date(start.valueOf() + 4 * 60 * 60 * 1000);
+  document.querySelector("#ibonav-notam-from").value = start.toISOString().slice(0, 16);
+  document.querySelector("#ibonav-notam-to").value = end.toISOString().slice(0, 16);
+}
+
+function ibonavMapURL() {
+  const params = new URLSearchParams({
+    mapSetCenter: "0,20",
+    mapSetZoomType: "level",
+    mapSetZoomValue: "3",
+    mapLayersAdd: "notam,atsairspace_combined,navaid_navaids,navwarnarea_combined"
+  });
+  return `${IBNAV_MAP_ORIGIN}/?${params}`;
+}
+
+async function ibonavProvideMapToken(renew = false) {
+  if (!ibonavMapFrame.contentWindow) return;
+  try {
+    const response = await fetch(`/api/v1/ibonav/map-token${renew ? "?renew=true" : ""}`, {
+      headers: { Accept: "application/json" },
+      cache: "no-store"
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || `Map token request failed (${response.status}).`);
+    if (!ibonavMapFrame.contentWindow) return;
+    ibonavMapFrame.contentWindow.postMessage({
+      type: "ais-map-auth",
+      token: result.token,
+      expires_in: result.expires_in,
+      roles: result.roles || []
+    }, IBNAV_MAP_ORIGIN);
+    window.clearTimeout(ibonavMapRenewTimer);
+    ibonavMapRenewTimer = window.setTimeout(
+      () => void ibonavProvideMapToken(true),
+      Math.max(30, Number(result.expires_in) - 300) * 1000
+    );
+    ibonavMapStatus.textContent = "Provider access token acquired. Map layers render only when the account role and chart/NOTAM coverage permit.";
+  } catch (error) {
+    ibonavMapStatus.textContent = `${error.message} The map requires a configured server token and provider map-frame role.`;
+    window.clearTimeout(ibonavMapRenewTimer);
+    ibonavMapRenewTimer = window.setTimeout(() => void ibonavProvideMapToken(false), 30_000);
+  }
+}
+
+async function ibonavSetupMap() {
+  try {
+    const response = await fetch("/api/v1/ibonav/status", { headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error("Map service status is unavailable.");
+    const status = await response.json();
+    if (!status.enabled) {
+      ibonavMapStatus.textContent = "Map integration is not configured. An administrator must set FP_IBONAV_PERSONAL_TOKEN on a trusted server and obtain the provider's map-frame, PIB API, and chart API roles.";
+      return;
+    }
+    ibonavMapFrame.src = ibonavMapURL();
+    ibonavMapFrame.hidden = false;
+    ibonavMapFrame.addEventListener("load", () => void ibonavProvideMapToken(false));
+    ibonavMapStatus.textContent = "Loading ibonav.aero map and chart catalog…";
+  } catch (error) {
+    ibonavMapStatus.textContent = `${error.message} The embedded chart map needs an internet connection.`;
+  }
+}
+
+window.addEventListener("message", (event) => {
+  if (event.origin !== IBNAV_MAP_ORIGIN || event.source !== ibonavMapFrame.contentWindow) return;
+  if (!event.data || event.data.type !== "ais-map-auth-request") return;
+  void ibonavProvideMapToken(event.data.renew === true);
+});
+
+function ibonavRecordValue(record, keys) {
+  for (const key of keys) {
+    const value = record?.[key];
+    if (value !== undefined && value !== null && String(value).trim()) {
+      return typeof value === "object" ? JSON.stringify(value) : String(value);
+    }
+  }
+  return "";
+}
+
+function ibonavRenderNotams(records) {
+  ibonavNotamResults.replaceChildren();
+  for (const record of records) {
+    const item = document.createElement("li");
+    item.className = "ibonav-notam-item";
+    const heading = document.createElement("h4");
+    heading.textContent = ibonavRecordValue(record, ["number", "notam_number", "id", "identifier"]) || "NOTAM";
+    item.append(heading);
+    const metadata = [
+      ["Location", ["location", "aerodrome", "airport", "ad", "fir"]],
+      ["Valid from", ["valid_from", "validFrom", "start_time", "effective_from"]],
+      ["Valid until", ["valid_to", "validTo", "end_time", "effective_to"]]
+    ];
+    for (const [label, keys] of metadata) {
+      const value = ibonavRecordValue(record, keys);
+      if (!value) continue;
+      const line = document.createElement("p");
+      line.className = "notam-meta";
+      line.textContent = `${label}: ${value}`;
+      item.append(line);
+    }
+    const body = ibonavRecordValue(record, ["icao_text", "message", "text", "raw", "notam_text", "text_plain"]);
+    if (body) {
+      const content = document.createElement("p");
+      content.textContent = body;
+      item.append(content);
+    }
+    ibonavNotamResults.append(item);
+  }
+}
+
+function ibonavRestoreSearch() {
+  let saved;
+  try {
+    saved = localStorage.getItem("fp-ibonav-notam-query");
+  } catch {
+    return;
+  }
+  if (!saved) return;
+  try {
+    const url = new URL(saved, location.origin);
+    if (url.origin !== location.origin || url.pathname !== "/api/v1/ibonav/notams") return;
+    const query = url.searchParams;
+    document.querySelector("#ibonav-notam-locations").value = query.get("location") || "";
+    document.querySelector("#ibonav-notam-from").value = query.get("validFrom")?.slice(0, 16) || "";
+    document.querySelector("#ibonav-notam-to").value = query.get("validTo")?.slice(0, 16) || "";
+  } catch {
+    try {
+      localStorage.removeItem("fp-ibonav-notam-query");
+    } catch {
+      // Search remains usable when browser storage is unavailable.
+    }
+  }
+}
+
+ibonavNotamForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const locations = document.querySelector("#ibonav-notam-locations").value.trim().toUpperCase();
+  const from = document.querySelector("#ibonav-notam-from").value;
+  const to = document.querySelector("#ibonav-notam-to").value;
+  if (!from || !to) {
+    ibonavNotamStatus.textContent = "Provide both ends of the UTC flight window.";
+    return;
+  }
+  const query = new URLSearchParams({
+    location: locations,
+    validFrom: new Date(`${from}Z`).toISOString(),
+    validTo: new Date(`${to}Z`).toISOString(),
+    limit: "200",
+    offset: "0"
+  });
+  const requestURL = `/api/v1/ibonav/notams?${query}`;
+  let querySaved = true;
+  try {
+    localStorage.setItem("fp-ibonav-notam-query", requestURL);
+  } catch {
+    querySaved = false;
+  }
+  ibonavNotamStatus.textContent = `Searching provider NOTAM data…${querySaved ? "" : " Browser storage is unavailable; this query will not be saved for offline reuse."}`;
+  try {
+    const response = await fetch(requestURL, { headers: { Accept: "application/json" }, cache: "no-store" });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || `NOTAM search failed (${response.status}).`);
+    const offline = response.headers.get("X-FP-Offline-Cache") === "true";
+    const records = result.data?.notams;
+    if (!Array.isArray(records)) throw new Error("Provider response did not contain a NOTAM list.");
+    ibonavRenderNotams(records);
+    ibonavNotamStatus.textContent = `${offline ? "OFFLINE CACHED COPY — may be stale. " : ""}${records.length} shown of ${result.total} matching NOTAMs. Retrieved ${formatReportTime(result.fetchedAt)} from ${result.source}.`;
+  } catch (error) {
+    ibonavNotamStatus.textContent = `${error.message} Previously displayed results, if any, are unchanged.`;
+  }
+});
+
+async function ibonavLoadAvailability() {
+  try {
+    const response = await fetch("/api/v1/ibonav/notams/availability", { headers: { Accept: "application/json" }, cache: "no-store" });
+    if (!response.ok) return;
+    const result = await response.json();
+    const data = result.data || {};
+    const updated = ibonavRecordValue(data, ["last_fetched", "lastFetched", "last_updated", "updated_at", "lastUpdate"]);
+    ibonavNotamFreshness.textContent = updated ? `Provider last update: ${formatReportTime(updated)}` : "Provider update time unavailable.";
+  } catch {
+    ibonavNotamFreshness.textContent = "Provider update time unavailable offline.";
+  }
+}
+
+ibonavSetUTCWindow();
+ibonavRestoreSearch();
+void ibonavSetupMap();
+void ibonavLoadAvailability();
