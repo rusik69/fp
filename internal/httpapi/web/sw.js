@@ -1,7 +1,8 @@
-const CACHE_NAME = "fp-shell-v44";
+const CACHE_NAME = "fp-shell-v45";
 const DOCUMENT_CACHE_NAME = "fp-documents-v1";
 const TFR_CACHE_NAME = "fp-faa-tfr-v1";
-const APP_SHELL = ["/", "/app.css", "/app.js", "/manifest.webmanifest", "/icon.svg", "/icon-180.png", "/icon-192.png", "/icon-512.png"];
+const AIRSPACE_CACHE_NAME = "fp-faa-airspace-v1";
+const APP_SHELL = ["/", "/app.css", "/app.js", "/natural-earth-land.json", "/manifest.webmanifest", "/icon.svg", "/icon-180.png", "/icon-192.png", "/icon-512.png"];
 const IBNAV_NOTAM_CACHE_NAME = "fp-ibonav-notams-v1";
 
 self.addEventListener("install", (event) => {

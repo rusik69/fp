@@ -221,6 +221,9 @@ let tfrLoadStarted = false;
 let airspaceRequestKey = "";
 let airportDirectoryCache;
 let airportDirectoryLoadPromise = null;
+let naturalEarthLand = null;
+let naturalEarthLandPromise = null;
+let naturalEarthLandState = "not-loaded";
 
 function projectSIGMETCoordinate(coordinate, airport) {
   if (coordinate?.lat === null || coordinate?.lat === undefined || coordinate?.lon === null || coordinate?.lon === undefined) return null;
@@ -234,6 +237,105 @@ function projectSIGMETCoordinate(coordinate, airport) {
     x: longitudeDelta * 60 * Math.cos(centerLatitude * Math.PI / 180),
     y: (latitude - centerLatitude) * 60
   };
+}
+
+function loadNaturalEarthLand() {
+  if (naturalEarthLandPromise || naturalEarthLandState !== "not-loaded") return;
+  naturalEarthLandState = "loading";
+  naturalEarthLandPromise = fetch("/natural-earth-land.json", {
+    headers: { Accept: "application/geo+json, application/json" }
+  })
+    .then(async (response) => {
+      if (!response.ok) throw new Error(`Natural Earth map data unavailable (${response.status})`);
+      const data = await response.json();
+      if (data.type !== "MultiPolygon" || !Array.isArray(data.coordinates)) {
+        throw new Error("Invalid Natural Earth land data");
+      }
+      naturalEarthLand = data.coordinates;
+      naturalEarthLandState = "ready";
+    })
+    .catch(() => {
+      naturalEarthLandState = "unavailable";
+    })
+    .then(() => {
+      if (!selectedAirport) return;
+      const now = Date.now() / 1000;
+      const reports = (sigmetIndex?.items || []).filter(
+        (report) => Number(report.validTimeFrom) <= now && now < Number(report.validTimeTo)
+      );
+      drawSIGMETMap(reports);
+    });
+}
+
+function clipMapPolygon(points) {
+  const edges = [
+    { axis: "x", boundary: 0, inside: (point) => point.x >= 0 },
+    { axis: "x", boundary: 760, inside: (point) => point.x <= 760 },
+    { axis: "y", boundary: 0, inside: (point) => point.y >= 0 },
+    { axis: "y", boundary: 540, inside: (point) => point.y <= 540 }
+  ];
+  let clipped = points;
+  for (const edge of edges) {
+    if (clipped.length === 0) return [];
+    const input = clipped;
+    clipped = [];
+    let previous = input[input.length - 1];
+    let previousInside = edge.inside(previous);
+    for (const current of input) {
+      const currentInside = edge.inside(current);
+      if (currentInside !== previousInside) {
+        const fraction = (edge.boundary - previous[edge.axis]) / (current[edge.axis] - previous[edge.axis]);
+        clipped.push({
+          x: previous.x + fraction * (current.x - previous.x),
+          y: previous.y + fraction * (current.y - previous.y)
+        });
+      }
+      if (currentInside) clipped.push(current);
+      previous = current;
+      previousInside = currentInside;
+    }
+  }
+  return clipped;
+}
+
+function drawNaturalEarthLand(appendSVG, airport, center, scale) {
+  const latitude = Number(airport.lat);
+  const longitude = Number(airport.lon);
+  if (Math.abs(latitude) >= 85) {
+    return "Natural Earth basemap omitted above 85° latitude because this local projection is distorted.";
+  }
+  if (!naturalEarthLand) {
+    loadNaturalEarthLand();
+    return naturalEarthLandState === "unavailable"
+      ? "Offline Natural Earth basemap unavailable."
+      : "Loading offline Natural Earth land outlines.";
+  }
+
+  const longitudeScale = 60 * Math.cos(latitude * Math.PI / 180) * scale;
+  const latitudeScale = 60 * scale;
+  const paths = [];
+  for (const polygon of naturalEarthLand) {
+    for (const worldOffset of [-360, 0, 360]) {
+      for (const ring of polygon) {
+        const points = ring.map(([lon, lat]) => ({
+          x: center.x + (lon + worldOffset - longitude) * longitudeScale,
+          y: center.y - (lat - latitude) * latitudeScale
+        }));
+        const visible = clipMapPolygon(points);
+        if (visible.length < 3) continue;
+        paths.push(`M ${visible.map((point) => `${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(" L ")} Z`);
+      }
+    }
+  }
+  if (paths.length > 0) {
+    appendSVG("path", {
+      d: paths.join(" "),
+      class: "sigmet-land",
+      "fill-rule": "evenodd",
+      "aria-hidden": "true"
+    });
+  }
+  return "Offline Natural Earth 1:110m land-outline basemap; geographic context only, not a navigation chart.";
 }
 
 function distanceFromOriginToSegmentSquared(start, end) {
@@ -451,6 +553,8 @@ function drawSIGMETMap(reports) {
     parent.append(element);
     return element;
   };
+  appendSVG("rect", { x: 0, y: 0, width: 760, height: 540, class: "sigmet-map-ocean" });
+  const basemapStatus = drawNaturalEarthLand(appendSVG, selectedAirport, center, scale);
 
   for (const radius of [sigmetMapRangeNM / 5, sigmetMapRangeNM / 2, sigmetMapRangeNM]) {
     appendSVG("circle", { cx: center.x, cy: center.y, r: radius * scale, class: "sigmet-range-ring" });
@@ -541,7 +645,7 @@ function drawSIGMETMap(reports) {
     showNavaids ? `${nearbyNavaidCount} navigation aids` : "Navaid layer hidden",
     showPIREPs ? `${mappedPIREPCount} PIREP location${mappedPIREPCount === 1 ? "" : "s"} (100 NM, 6 hours)` : "PIREP layer hidden"
   ].join(", ");
-  map.setAttribute("aria-label", `Schematic ${sigmetMapRangeNM} NM map centered on ${firstText(selectedAirport, ["icaoId", "ident", "name"]) || "selected airport"}; ${layerSummary}`);
+  map.setAttribute("aria-label", `Schematic ${sigmetMapRangeNM} NM map centered on ${firstText(selectedAirport, ["icaoId", "ident", "name"]) || "selected airport"}, with Natural Earth land outlines; ${layerSummary}`);
   const fetchedAt = airspaceData?.properties?.fetchedAt;
   const airspaceNote = !showAirspace
     ? " FAA airspace map layer hidden. FAA coverage is U.S., Puerto Rico, and U.S. Virgin Islands only. Reference only—not for navigation or clearances."
@@ -561,7 +665,7 @@ function drawSIGMETMap(reports) {
   const pirepMapStatus = showPIREPs
     ? ` ${mappedPIREPCount} PIREP location${mappedPIREPCount === 1 ? "" : "s"} shown; feed requested within 100 NM for the previous 6 hours.`
     : " PIREP map layer hidden; listed reports remain available.";
-  status.textContent = `${sigmetMapStatus} ${pirepMapStatus} ${referenceStatus}${tfrStatus}${airspaceNote}`;
+  status.textContent = `${basemapStatus} ${sigmetMapStatus} ${pirepMapStatus} ${referenceStatus}${tfrStatus}${airspaceNote}`;
   return nearbyCount;
 }
 

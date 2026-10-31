@@ -1,6 +1,6 @@
 # FP — pilot briefing tools
 
-FP is a cross-platform, offline-capable aviation information app with a Go backend and embedded web interface. It combines weather briefings, airport reference data, FAA procedures and VFR chart PDFs, hazard/map overlays, regional AIS links, and local chart/briefing storage. Availability and currency vary by source and region.
+FP is a cross-platform, offline-capable aviation information app with a Go backend and embedded web interface. It combines weather briefings, airport reference data, FAA procedures and VFR chart PDFs, an offline Natural Earth land-outline basemap with aviation hazard overlays, regional AIS links, and local chart/briefing storage. Availability and currency vary by source and region. The basemap is geographic context only, not a navigation chart.
 
 ## Run the web app
 
@@ -35,6 +35,6 @@ Desktop builds target macOS, Linux, and Windows on amd64 and arm64. Platform pac
 
 ## Offline and aviation-data limits
 
-The app shell and previously saved browser/device data can work without a connection. Live weather, external charts, the iBonav map, and provider refreshes require internet. Exact iBonav NOTAM searches may be served from a local cache when offline; cached data is marked as potentially stale. Mobile users may keep the bundled loopback backend or select a trusted HTTPS server; each server origin has separate browser storage, and the remote operator controls server-side data and credentials. Browser/device storage can be cleared or evicted.
+The app shell, Natural Earth land basemap, and previously saved browser/device data can work without a connection. Live weather, external charts, the iBonav map, and provider refreshes require internet. Exact iBonav NOTAM searches may be served from a local cache when offline; cached data is marked as potentially stale. Mobile users may keep the bundled loopback backend or select a trusted HTTPS server; each server origin has separate browser storage, and the remote operator controls server-side data and credentials. Browser/device storage can be cleared or evicted.
 
 Coverage is not globally complete: FAA procedures and VFR charts are U.S.-focused; international chart availability depends on provider coverage and account access; regional AIS links lead to external services with their own requirements. No provider is guaranteed free, complete, or continuously available. FP is supplemental information, not an approved navigation system or replacement for current State AIS/AIP publications and official preflight briefings. Verify source, edition, scope, validity, and currency before flight.

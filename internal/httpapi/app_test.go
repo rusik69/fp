@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"image/png"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -16,14 +17,15 @@ import (
 func TestFrontendAssetsAreServedWithBrowserContentTypes(t *testing.T) {
 	handler := NewHandler()
 	for path, contentType := range map[string]string{
-		"/":                     "text/html",
-		"/app.js":               "javascript",
-		"/app.css":              "text/css",
-		"/manifest.webmanifest": "application/manifest+json",
-		"/icon.svg":             "image/svg+xml",
-		"/icon-180.png":         "image/png",
-		"/icon-192.png":         "image/png",
-		"/icon-512.png":         "image/png",
+		"/":                        "text/html",
+		"/app.js":                  "javascript",
+		"/app.css":                 "text/css",
+		"/natural-earth-land.json": "application/json",
+		"/manifest.webmanifest":    "application/manifest+json",
+		"/icon.svg":                "image/svg+xml",
+		"/icon-180.png":            "image/png",
+		"/icon-192.png":            "image/png",
+		"/icon-512.png":            "image/png",
 	} {
 		res := httptest.NewRecorder()
 		handler.ServeHTTP(res, httptest.NewRequest(http.MethodGet, path, nil))
@@ -33,6 +35,56 @@ func TestFrontendAssetsAreServedWithBrowserContentTypes(t *testing.T) {
 		}
 		if got := res.Header().Get("Content-Type"); !strings.Contains(got, contentType) {
 			t.Errorf("GET %s Content-Type = %q, want it to contain %q", path, got, contentType)
+		}
+	}
+}
+
+func TestNaturalEarthBasemapContainsClosedGeographicLandRings(t *testing.T) {
+	handler := NewHandler()
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/natural-earth-land.json", nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("basemap status = %d", response.Code)
+	}
+	var land struct {
+		Type        string          `json:"type"`
+		Coordinates [][][][]float64 `json:"coordinates"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &land); err != nil {
+		t.Fatalf("decode Natural Earth land geometry: %v", err)
+	}
+	if land.Type != "MultiPolygon" || len(land.Coordinates) == 0 {
+		t.Fatalf("invalid Natural Earth geometry: type=%q polygons=%d", land.Type, len(land.Coordinates))
+	}
+	for polygonIndex, polygon := range land.Coordinates {
+		if len(polygon) == 0 {
+			t.Errorf("polygon %d has no rings", polygonIndex)
+			continue
+		}
+		for ringIndex, ring := range polygon {
+			if len(ring) < 4 {
+				t.Errorf("polygon %d ring %d has only %d coordinates", polygonIndex, ringIndex, len(ring))
+				continue
+			}
+			if len(ring[0]) != 2 || len(ring[len(ring)-1]) != 2 {
+				t.Errorf("polygon %d ring %d has malformed endpoints", polygonIndex, ringIndex)
+				continue
+			}
+			if ring[0][0] != ring[len(ring)-1][0] || ring[0][1] != ring[len(ring)-1][1] {
+				t.Errorf("polygon %d ring %d is not closed", polygonIndex, ringIndex)
+				continue
+			}
+			for pointIndex, point := range ring {
+				if len(point) != 2 {
+					t.Errorf("polygon %d ring %d point %d has %d coordinates", polygonIndex, ringIndex, pointIndex, len(point))
+					continue
+				}
+				lon, lat := point[0], point[1]
+				if math.IsNaN(lon) || math.IsInf(lon, 0) || lon < -180 || lon > 180 ||
+					math.IsNaN(lat) || math.IsInf(lat, 0) || lat < -90 || lat > 90 {
+					t.Errorf("polygon %d ring %d point %d is outside longitude/latitude bounds: %v", polygonIndex, ringIndex, pointIndex, point)
+				}
+			}
 		}
 	}
 }
