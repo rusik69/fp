@@ -1,6 +1,6 @@
 # Android app
 
-The Android app is a native WebView host for the existing embedded web UI and Go HTTP API. The Activity starts the Go service in-process on `127.0.0.1:8080`, stores its cache under the app's private files directory, and opens the stable `http://localhost:8080` origin. The stable origin lets WebView's service-worker cache survive process restarts. WebView file/content access and mixed content are disabled; cleartext networking is permitted only for `localhost`. External HTTPS links open in the system browser.
+The Android app is a native WebView host for the existing embedded web UI and Go HTTP API. By default, the Activity starts the Go service in-process on `127.0.0.1:8080`, stores its cache under the app's private files directory, and opens the stable `http://localhost:8080` origin. Tap **Server** to use a separately administered FP server instead; remote server addresses must be HTTPS origins (host and optional port only), are saved in app preferences, and are restricted to that exact origin in the WebView. The bundled local server remains available through **Use on-device server**. Never embed an iBonav or other provider credential in the app; configure provider access only on a trusted Go server. WebView file/content access and mixed content are disabled; cleartext networking is permitted only for `localhost`. External HTTPS links open in the system browser.
 
 ## Prerequisites
 
@@ -33,10 +33,4 @@ Run the Android instrumentation smoke test on a booted API 37 emulator or connec
 make android-test
 ```
 
-The test launches the Activity and verifies that the embedded home page is served from the local Go backend. Go service lifecycle and HTTP behavior are covered by `go test ./mobile`.
-
-## Offline and operational-data limits
-
-The app bundles the UI and backend, so its shell opens without network access. WebView's service worker and browser storage persist on the device; successful cached briefings remain readable when the connection is unavailable, subject to their displayed source and freshness. A first-time download, live refresh, charts, NOTAMs, and other external provider data still need connectivity and depend on provider coverage and redistribution terms. Bundling the app does not make those feeds available offline automatically. Verify current official aeronautical information before flight; this app is not an approved navigation source.
-
-The Go server listens only on IPv4 loopback. The Android network security policy allows HTTP only to the app's `localhost` origin; provider requests use HTTPS. App data and cache files live in the app's private storage and are removed when Android uninstalls the app.
+The app bundles the UI and backend, so its shell opens without network access. WebView's service worker and browser storage persist on the device for the selected server origin; successful cached briefings remain readable when the connection is unavailable, subject to their displayed source and freshness. Switching server origins uses separate browser storage. A remote server's data, access logs, provider credentials, retention, and security are controlled by that server's operator. A first-time download, live refresh, charts, NOTAMs, and other external provider data still need connectivity and depend on provider coverage and redistribution terms. Bundling the app does not make those feeds available offline automatically. Verify current official aeronautical information before flight; this app is not an approved navigation source.
