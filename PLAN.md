@@ -44,11 +44,11 @@ Acceptance for implementation: the iBonav map token stays server-side, map messa
 
 Evidence: `internal/ibonav` and `internal/httpapi/ibonav_test.go` cover mocked provider requests, credential non-disclosure, validation, and error behavior; the UI and README document required roles. The selected-airport map center was browser-smoke-tested for KJFK, KLAX, and missing-coordinate fallback. No live provider connection was made.
 
-### 7. Region-specific AIS/AIM discovery — PARTIAL
+### 7. Region-specific AIS/AIM discovery — PARTIAL (DELIVERED LINKS COMPLETE; INTEGRATION BLOCKED BY B2)
 
 Delivered: country-specific official AIS/NOTAM links, a general State AIS/AIP fallback, and provider coverage/access caveats are documented in `AGENTS.md` and exposed by the UI. These links are not integrated feeds and are not cached by FP. The existing iBonav API is a conditional aggregation path.
 
-Acceptance for this delivered portion: source links are explicit about account requirements, scope, freshness, and whether the page is a route PIB. This does not mean every country's operational data is integrated.
+Acceptance for delivered portion: source links are explicit about account requirements, scope, freshness, and whether the page is a route PIB; this portion is complete. Additional integrated country feeds are tracked by B2. No further source-link item is currently unblocked.
 
 ### 8. Android/iOS app versions and preview distribution — DONE
 
