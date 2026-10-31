@@ -10,7 +10,7 @@ Requires Go 1.26 or newer:
 go run ./cmd/fp
 ```
 
-Open `http://localhost:8080`. Set `FP_LISTEN_ADDR` to change the listen address and `FP_DATA_DIR` to choose the server's cache/data directory.
+The server binds to `127.0.0.1:8080` by default. Set `FP_LISTEN_ADDR` to change the bind address and `FP_DATA_DIR` to choose the server's cache/data directory. If you expose it beyond the local machine, configure the bind deliberately and use an HTTPS reverse proxy.
 
 ### iBonav chart map and NOTAM API
 

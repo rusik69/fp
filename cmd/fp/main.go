@@ -10,10 +10,7 @@ import (
 )
 
 func main() {
-	addr := os.Getenv("FP_LISTEN_ADDR")
-	if addr == "" {
-		addr = ":8080"
-	}
+	addr := listenAddress()
 
 	server := &http.Server{
 		Addr:              addr,
@@ -22,4 +19,11 @@ func main() {
 	}
 	log.Printf("fp backend listening on %s", addr)
 	log.Fatal(server.ListenAndServe())
+}
+
+func listenAddress() string {
+	if addr := os.Getenv("FP_LISTEN_ADDR"); addr != "" {
+		return addr
+	}
+	return "127.0.0.1:8080"
 }
