@@ -1,6 +1,7 @@
 # FP — pilot briefing tools
 
 FP is a cross-platform, offline-capable aviation information app with a Go backend and embedded web interface. It combines weather briefings, airport reference data, FAA procedures and VFR chart PDFs, an offline Natural Earth land-outline basemap with aviation hazard overlays, a provider map centered on the selected airport when coordinates are available, regional AIS links, and local chart/briefing storage. Availability and currency vary by source and region. The basemap is geographic context only, not a navigation chart.
+See [PLAN.md](PLAN.md) for the authoritative implementation backlog, acceptance criteria, and external blockers.
 
 ## Run the web app
 
