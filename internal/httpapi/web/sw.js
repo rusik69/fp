@@ -1,4 +1,4 @@
-const CACHE_NAME = "fp-shell-v45";
+const CACHE_NAME = "fp-shell-v46";
 const DOCUMENT_CACHE_NAME = "fp-documents-v1";
 const TFR_CACHE_NAME = "fp-faa-tfr-v1";
 const AIRSPACE_CACHE_NAME = "fp-faa-airspace-v1";

@@ -800,6 +800,7 @@ function renderAirportOperations(airport) {
 function show(bundle, local = false) {
   const airport = bundle.airport?.[0] || {};
   selectedAirport = airport;
+  updateIbonavMapLocation();
   if (!tfrLoadStarted) {
     tfrLoadStarted = true;
     void loadTFRs();
@@ -1937,6 +1938,8 @@ const ibonavNotamStatus = document.querySelector("#ibonav-notam-status");
 const ibonavNotamResults = document.querySelector("#ibonav-notam-results");
 const ibonavNotamFreshness = document.querySelector("#ibonav-notam-freshness");
 const IBNAV_MAP_ORIGIN = "https://ais-map.ibosoft.net.tr";
+let ibonavMapEnabled = false;
+let ibonavMapLocationURL = "";
 let ibonavMapRenewTimer;
 
 function ibonavSetUTCWindow() {
@@ -1946,14 +1949,41 @@ function ibonavSetUTCWindow() {
   document.querySelector("#ibonav-notam-to").value = end.toISOString().slice(0, 16);
 }
 
-function ibonavMapURL() {
+function ibonavMapCoordinates(airport) {
+  if (
+    airport?.lat === null || airport?.lat === undefined || String(airport.lat).trim() === "" ||
+    airport?.lon === null || airport?.lon === undefined || String(airport.lon).trim() === ""
+  ) return null;
+  const latitude = Number(airport.lat);
+  const longitude = Number(airport.lon);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return null;
+  return { latitude, longitude };
+}
+
+function ibonavMapURL(airport = selectedAirport) {
+  const coordinates = ibonavMapCoordinates(airport);
   const params = new URLSearchParams({
-    mapSetCenter: "0,20",
+    mapSetCenter: coordinates ? `${coordinates.longitude},${coordinates.latitude}` : "0,20",
     mapSetZoomType: "level",
-    mapSetZoomValue: "3",
+    mapSetZoomValue: coordinates ? "8" : "3",
     mapLayersAdd: "notam,atsairspace_combined,navaid_navaids,navwarnarea_combined"
   });
   return `${IBNAV_MAP_ORIGIN}/?${params}`;
+}
+
+function updateIbonavMapLocation() {
+  if (!ibonavMapEnabled) return;
+  const url = ibonavMapURL();
+  if (url === ibonavMapLocationURL) return;
+  ibonavMapLocationURL = url;
+  ibonavMapFrame.src = url;
+  const coordinates = ibonavMapCoordinates(selectedAirport);
+  if (!coordinates) {
+    ibonavMapStatus.textContent = "Loading the worldwide map view; selected airport coordinates are unavailable.";
+    return;
+  }
+  const station = firstText(selectedAirport, ["icaoId", "ident"]) || currentFavoriteStation || "selected airport";
+  ibonavMapStatus.textContent = `Loading the map centered on ${station} (${coordinates.latitude}, ${coordinates.longitude})…`;
 }
 
 async function ibonavProvideMapToken(renew = false) {
@@ -1994,10 +2024,10 @@ async function ibonavSetupMap() {
       ibonavMapStatus.textContent = "Map integration is not configured. An administrator must set FP_IBONAV_PERSONAL_TOKEN on a trusted server and obtain the provider's map-frame, PIB API, and chart API roles.";
       return;
     }
-    ibonavMapFrame.src = ibonavMapURL();
+    ibonavMapEnabled = true;
     ibonavMapFrame.hidden = false;
     ibonavMapFrame.addEventListener("load", () => void ibonavProvideMapToken(false));
-    ibonavMapStatus.textContent = "Loading ibonav.aero map and chart catalog…";
+    updateIbonavMapLocation();
   } catch (error) {
     ibonavMapStatus.textContent = `${error.message} The embedded chart map needs an internet connection.`;
   }
